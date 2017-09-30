@@ -72,7 +72,7 @@ public class TupleDesc implements Serializable {
      * Constructor. Create a new tuple desc with typeAr.length fields with
      * TDItem fields (field name and type slready incorporated)
      *
-     * @param ArrayList<TDItem> items
+     * Array List<TDItem> items
      *            array with the TDItems to go into the TupleDesc
      */
     public TupleDesc(ArrayList<TDItem> items){
@@ -117,8 +117,7 @@ public class TupleDesc implements Serializable {
         if (i<fields.size()){
             return fields.get(i).fieldName;
         }
-        return void;
-        //throw;
+        throw new NoSuchElementException();
     }
 
     /**
@@ -135,8 +134,7 @@ public class TupleDesc implements Serializable {
         if (i<fields.size()){
             return fields.get(i).fieldType;
         }
-        return void;
-        //throw;
+        throw new NoSuchElementException();
     }
 
     /**
@@ -154,7 +152,7 @@ public class TupleDesc implements Serializable {
                return i;
            }
        }
-       return void; //throw exception
+       throw new NoSuchElementException(); //throw exception
     }
 
     /**
@@ -226,9 +224,9 @@ public class TupleDesc implements Serializable {
      */
     public String toString() {
 
-        String str = '';
+        String str = "";
         for (int i = 0; i < fields.size() - 1; i++) {
-            str += fields.toString() + ', ';
+            str += fields.toString() + ", ";
         }
 
         return str;
