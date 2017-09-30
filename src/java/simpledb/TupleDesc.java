@@ -90,7 +90,9 @@ public class TupleDesc implements Serializable {
     public TupleDesc(Type[] typeAr) {
         fields = new ArrayList<TDItem>();
         for(int i=0; i<typeAr.length; i++) {
-            TDItem curr = new TDItem(typeAr[i], null);
+            String str = Integer.toString(i);
+            str = "X" + str;
+            TDItem curr = new TDItem(typeAr[i], str);
             fields.add(curr);
         }
     }
@@ -197,8 +199,15 @@ public class TupleDesc implements Serializable {
      */
 
     public boolean equals(Object o) {
-
-        // some code goes here
+        TupleDesc op = (TupleDesc) o;
+        if (op.fields.size() == this.fields.size()) {
+            for (int i = 0; i < this.fields.size(); i++) {
+                if (op.fields.get(i).fieldType != this.fields.get(i).fieldType) {
+                    return false;
+                }
+            }
+            return true;
+        }
         return false;
     }
 
@@ -216,7 +225,12 @@ public class TupleDesc implements Serializable {
      * @return String describing this descriptor.
      */
     public String toString() {
-        // some code goes here
-        return "";
+
+        String str = '';
+        for (int i = 0; i < fields.size() - 1; i++) {
+            str += fields.toString() + ', ';
+        }
+
+        return str;
     }
 }

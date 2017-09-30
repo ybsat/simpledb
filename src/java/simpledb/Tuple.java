@@ -13,6 +13,10 @@ public class Tuple implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    public TupleDesc schema;
+    public ArrayList<Field> data;
+    public RecordID id;
+
     /**
      * Create a new tuple with the specified schema (type).
      *
@@ -21,16 +25,20 @@ public class Tuple implements Serializable {
      *            instance with at least one field.
      */
     public Tuple(TupleDesc td) {
-        // some code goes here
-	// yes
+        schema = td;
+        id = null;
+
+        data = new ArrayList<Field>();
+        for (int i =0; i < td.fields.size()) {
+            data.add(null);
+        }
     }
 
     /**
      * @return The TupleDesc representing the schema of this tuple.
      */
     public TupleDesc getTupleDesc() {
-        // some code goes here
-        return null;
+        return schema;
     }
 
     /**
@@ -38,8 +46,7 @@ public class Tuple implements Serializable {
      *         be null.
      */
     public RecordId getRecordId() {
-        // some code goes here
-        return null;
+        return id;
     }
 
     /**
@@ -49,8 +56,9 @@ public class Tuple implements Serializable {
      *            the new RecordId for this tuple.
      */
     public void setRecordId(RecordId rid) {
-        // some code goes here
+        id = rid;
     }
+
 
     /**
      * Change the value of the ith field of this tuple.
@@ -61,7 +69,7 @@ public class Tuple implements Serializable {
      *            new value for the field.
      */
     public void setField(int i, Field f) {
-        // some code goes here
+
     }
 
     /**
