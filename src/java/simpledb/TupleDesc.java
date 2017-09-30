@@ -35,14 +35,15 @@ public class TupleDesc implements Serializable {
         }
     }
 
+    ArrayList<TDItem> fields;
+
     /**
      * @return
      *        An iterator which iterates over all the field TDItems
      *        that are included in this TupleDesc
      * */
     public Iterator<TDItem> iterator() {
-        // some code goes here
-        return null;
+        return this.fields.iterator();
     }
 
     private static final long serialVersionUID = 1L;
@@ -59,7 +60,23 @@ public class TupleDesc implements Serializable {
      *            be null.
      */
     public TupleDesc(Type[] typeAr, String[] fieldAr) {
-        // some code goes here
+        fields = new ArrayList<TDItem>();
+        for(int i=0; i<typeAr.length; i++) {
+            TDItem curr = new TDItem(typeAr[i], fieldAr[i]);
+            fields.add(curr);
+        }
+    }
+
+
+    /**
+     * Constructor. Create a new tuple desc with typeAr.length fields with
+     * TDItem fields (field name and type slready incorporated)
+     *
+     * @param ArrayList<TDItem> items
+     *            array with the TDItems to go into the TupleDesc
+     */
+    public TupleDesc(ArrayList<TDItem> items){
+        fields=items;
     }
 
     /**
@@ -71,15 +88,18 @@ public class TupleDesc implements Serializable {
      *            TupleDesc. It must contain at least one entry.
      */
     public TupleDesc(Type[] typeAr) {
-        // some code goes here
+        fields = new ArrayList<TDItem>();
+        for(int i=0; i<typeAr.length; i++) {
+            TDItem curr = new TDItem(typeAr[i], null);
+            fields.add(curr);
+        }
     }
 
     /**
      * @return the number of fields in this TupleDesc
      */
     public int numFields() {
-        // some code goes here
-        return 0;
+        return this.fields.size();
     }
 
     /**
@@ -92,8 +112,11 @@ public class TupleDesc implements Serializable {
      *             if i is not a valid field reference.
      */
     public String getFieldName(int i) throws NoSuchElementException {
-        // some code goes here
-        return null;
+        if (i<fields.size()){
+            return fields.get(i).fieldName;
+        }
+        return void;
+        //throw;
     }
 
     /**
@@ -107,8 +130,11 @@ public class TupleDesc implements Serializable {
      *             if i is not a valid field reference.
      */
     public Type getFieldType(int i) throws NoSuchElementException {
-        // some code goes here
-        return null;
+        if (i<fields.size()){
+            return fields.get(i).fieldType;
+        }
+        return void;
+        //throw;
     }
 
     /**
@@ -121,8 +147,12 @@ public class TupleDesc implements Serializable {
      *             if no field with a matching name is found.
      */
     public int fieldNameToIndex(String name) throws NoSuchElementException {
-        // some code goes here
-        return 0;
+       for(int i=0; i<fields.size(); i++){
+           if (fields.get(i).fieldName==name){
+               return i;
+           }
+       }
+       return void; //throw exception
     }
 
     /**
@@ -130,8 +160,11 @@ public class TupleDesc implements Serializable {
      *         Note that tuples from a given TupleDesc are of a fixed size.
      */
     public int getSize() {
-        // some code goes here
-        return 0;
+        int sumSize=0;
+        for(int i=0; i<fields.size(); i++){
+            sumSize+=fields.get(i).fieldType.getLen();
+        }
+        return sumSize;
     }
 
     /**
@@ -145,8 +178,11 @@ public class TupleDesc implements Serializable {
      * @return the new TupleDesc
      */
     public static TupleDesc merge(TupleDesc td1, TupleDesc td2) {
-        // some code goes here
-        return null;
+        ArrayList<TDItem> concatenated = new ArrayList<TDItem>();
+        concatenated.addAll(td1.fields);
+        concatenated.addAll(td2.fields);
+        TupleDesc merged = new TupleDesc(concatenated);
+        return merged;
     }
 
     /**
@@ -161,6 +197,7 @@ public class TupleDesc implements Serializable {
      */
 
     public boolean equals(Object o) {
+
         // some code goes here
         return false;
     }
