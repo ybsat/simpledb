@@ -79,7 +79,9 @@ public class Catalog {
      * @throws NoSuchElementException if the table doesn't exist
      */
     public int getTableId(String name) throws NoSuchElementException {
-        if(tables.contains(name)){
+        if (name == null) throw new NoSuchElementException();
+
+        if(!(tables.isEmpty()) && tables.containsKey(name)){
             return tables.get(name).file.getId();
         }
         throw new NoSuchElementException();
@@ -92,7 +94,6 @@ public class Catalog {
      * @throws NoSuchElementException if the table doesn't exist
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
-
         for (String tname: tables.keySet()){
             if(tables.get(tname).file.getId()==tableid){
                 return tables.get(tname).file.getTupleDesc();
@@ -135,7 +136,7 @@ public class Catalog {
 
     public String getTableName(int id) {
         for (String tname: tables.keySet()){
-            if(tables.get(tname).file.getId()==id){
+            if(tables.get(tname).file.getId() == id){
                 return tables.get(tname).name;
             }
         }
