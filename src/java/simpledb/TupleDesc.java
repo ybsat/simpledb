@@ -35,7 +35,9 @@ public class TupleDesc implements Serializable {
         }
     }
 
-    ArrayList<TDItem> fields;
+    public ArrayList<TDItem> fields; //Dynamic array holding TDItem field information
+    public boolean isnull; // Boolean to determine whether all field names are null or not (initialized by constructor only)
+    private static final long serialVersionUID = 1L;
 
     /**
      * @return
@@ -46,7 +48,6 @@ public class TupleDesc implements Serializable {
         return this.fields.iterator();
     }
 
-    private static final long serialVersionUID = 1L;
 
     /**
      * Create a new TupleDesc with typeAr.length fields with fields of the
@@ -65,6 +66,7 @@ public class TupleDesc implements Serializable {
             TDItem curr = new TDItem(typeAr[i], fieldAr[i]);
             fields.add(curr);
         }
+        isnull = false;
     }
 
 
@@ -75,8 +77,9 @@ public class TupleDesc implements Serializable {
      * Array List<TDItem> items
      *            array with the TDItems to go into the TupleDesc
      */
-    public TupleDesc(ArrayList<TDItem> items){
+    public TupleDesc(ArrayList<TDItem> items, boolean isnullmodifier){
         fields=items;
+        isnull = isnullmodifier;
     }
 
     /**
@@ -90,11 +93,10 @@ public class TupleDesc implements Serializable {
     public TupleDesc(Type[] typeAr) {
         fields = new ArrayList<TDItem>();
         for(int i=0; i<typeAr.length; i++) {
-            String str = Integer.toString(i);
-            str = "X" + str;
-            TDItem curr = new TDItem(typeAr[i], str);
+            TDItem curr = new TDItem(typeAr[i], null);
             fields.add(curr);
         }
+        isnull = true;
     }
 
     /**
@@ -147,13 +149,24 @@ public class TupleDesc implements Serializable {
      *             if no field with a matching name is found.
      */
     public int fieldNameToIndex(String name) throws NoSuchElementException {
-       for(int i=0; i<fields.size(); i++){
-           if (fields.get(i).fieldName==name){
+
+        // null search throws exception
+        if (name == null) throw new NoSuchElementException();
+
+        // if all field names are null, throws exception
+        if (isnull == true) throw new NoSuchElementException();
+
+        // find field index if name exists
+        for(int i=0; i<fields.size(); i++){
+           if (fields.get(i).fieldName == name){
                return i;
            }
        }
+
+       // if field name not available, throw exception
        throw new NoSuchElementException(); //throw exception
     }
+
 
     /**
      * @return The size (in bytes) of tuples corresponding to this TupleDesc.
@@ -181,7 +194,9 @@ public class TupleDesc implements Serializable {
         ArrayList<TDItem> concatenated = new ArrayList<TDItem>();
         concatenated.addAll(td1.fields);
         concatenated.addAll(td2.fields);
-        TupleDesc merged = new TupleDesc(concatenated);
+        boolean isnullmodifier = false; // to overwrite isnull for the concatenated TD
+        if (td1.isnull == true && td2.isnull == true) {isnullmodifier = true;}
+        TupleDesc merged = new TupleDesc(concatenated, isnullmodifier);
         return merged;
     }
 
@@ -197,6 +212,8 @@ public class TupleDesc implements Serializable {
      */
 
     public boolean equals(Object o) {
+        if (o == null) return false;
+        if (!(o instanceof TupleDesc)) return false;
         TupleDesc op = (TupleDesc) o;
         if (op.fields.size() == this.fields.size()) {
             for (int i = 0; i < this.fields.size(); i++) {

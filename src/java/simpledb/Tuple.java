@@ -14,9 +14,9 @@ public class Tuple implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public TupleDesc schema;
-    public ArrayList<Field> data;
-    public RecordId id;
+    public TupleDesc schema; //internal Tuple Desc
+    public ArrayList<Field> data; //data fields
+    public RecordId id; //recordID number
 
     /**
      * Create a new tuple with the specified schema (type).
@@ -30,7 +30,7 @@ public class Tuple implements Serializable {
         id = null;
 
         data = new ArrayList<Field>();
-        for (int i =0; i < td.fields.size();) {
+        for (int i =0; i < td.fields.size(); i++) {
             data.add(null);
         }
     }
