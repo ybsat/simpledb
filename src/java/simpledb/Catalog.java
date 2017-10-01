@@ -31,16 +31,13 @@ public class Catalog {
         }
 
     }
-
-    public ArrayList<Table> tables;
-
+    public ConcurrentHashMap<String,Table> tables;
     /**
      * Constructor.
      * Creates a new, empty catalog.
      */
     public Catalog() {
-        tables = new ArrayList<Table>();
-        // some code goes here
+        tables = new ConcurrentHashMap<String,Table>();
     }
 
     /**
@@ -53,10 +50,13 @@ public class Catalog {
      * @param pkeyField the name of the primary key field
      */
     public void addTable(DbFile file, String name, String pkeyField) {
-        // what to do about name conflict
         Table newTable = new Table(file, name, pkeyField);
-        tables.add(newTable);
-        // some code goes here
+        if(tables.containsKey(name)){
+            tables.replace(name,newTable);
+        }
+        else{
+            tables.put(name,newTable);
+        }
     }
 
     public void addTable(DbFile file, String name) {
@@ -79,10 +79,8 @@ public class Catalog {
      * @throws NoSuchElementException if the table doesn't exist
      */
     public int getTableId(String name) throws NoSuchElementException {
-        for(int i=0; i<tables.size(); i++){
-            if(tables.get(i).name == name){
-                return tables.get(i).file.getId();
-            }
+        if(tables.contains(name)){
+            return tables.get(name).file.getId();
         }
         throw new NoSuchElementException();
     }
@@ -94,9 +92,10 @@ public class Catalog {
      * @throws NoSuchElementException if the table doesn't exist
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
-        for (int i=0; i<tables.size();i++){
-            if(tables.get(i).file.getId()==tableid){
-                return tables.get(i).file.getTupleDesc();
+
+        for (String tname: tables.keySet()){
+            if(tables.get(tname).file.getId()==tableid){
+                return tables.get(tname).file.getTupleDesc();
             }
         }
         throw new NoSuchElementException();
@@ -109,32 +108,35 @@ public class Catalog {
      *     function passed to addTable
      */
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
-        for (int i=0; i<tables.size();i++){
-            if(tables.get(i).file.getId()==tableid){
-                return tables.get(i).file;
+        for (String tname: tables.keySet()){
+            if(tables.get(tname).file.getId()==tableid){
+                return tables.get(tname).file;
             }
         }
         throw new NoSuchElementException();
     }
 
     public String getPrimaryKey(int tableid) {
-        for (int i=0; i<tables.size();i++){
-            if(tables.get(i).file.getId()==tableid){
-                return tables.get(i).pkeyField;
+        for (String tname: tables.keySet()){
+            if(tables.get(tname).file.getId()==tableid){
+                return tables.get(tname).pkeyField;
             }
         }
         return null;
     }
 
     public Iterator<Integer> tableIdIterator() {
-        // how to return integers
-        return null;
+        ArrayList<Integer> arr = new ArrayList<Integer>();
+        for(String tname: tables.keySet()){
+            arr.add(tables.get(tname).file.getId());
+        }
+        return arr.iterator();
     }
 
     public String getTableName(int id) {
-        for (int i=0; i<tables.size();i++){
-            if(tables.get(i).file.getId()==id){
-                return tables.get(i).name;
+        for (String tname: tables.keySet()){
+            if(tables.get(tname).file.getId()==id){
+                return tables.get(tname).name;
             }
         }
         return null;
