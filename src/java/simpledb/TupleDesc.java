@@ -158,7 +158,7 @@ public class TupleDesc implements Serializable {
 
         // find field index if name exists
         for(int i=0; i<fields.size(); i++){
-           if (fields.get(i).fieldName == name){
+           if (fields.get(i).fieldName.equals(name)){
                return i;
            }
        }
