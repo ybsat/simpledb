@@ -65,7 +65,31 @@ public class HeapFile implements DbFile {
 
     // see DbFile.java for javadocs
     public Page readPage(PageId pid) {
-        // some code goes here
+        if(pid.getTableId() != fileid){
+            throw new IllegalArgumentException();
+        }
+        int pageNum= pid.getPageNumber();
+        int pageSize = Database.getBufferPool().getPageSize();
+
+
+        try {
+            int offset = pageSize * pageNum;
+            byte[] bytesToRead = new byte[pageSize];
+            RandomAccessFile raf = new RandomAccessFile(file.getAbsolutePath(), "rw");
+            raf.seek(offset);
+            raf.read(bytesToRead);
+            HeapPageId hpid;
+            hpid = (HeapPageId)pid;
+            HeapPage pageRead = new HeapPage(hpid, bytesToRead);
+            return pageRead;
+        }
+        catch(IOException ex) {
+            try {
+                throw new IOException(ex.getMessage());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         return null;
     }
 

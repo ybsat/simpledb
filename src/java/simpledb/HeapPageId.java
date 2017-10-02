@@ -12,19 +12,19 @@ public class HeapPageId implements PageId {
      *
      */
 
-    public int hashNum;
-    public int tableNum; //this is tableId
+    public int pageId;
+    public int hTableId; //this is tableId
     public int pageNum;
 
     public HeapPageId(int tableId, int pgNo) {
         pageNum = pgNo;
-        tableNum = tableId;
-        hashNum = hashCode();
+        hTableId = tableId;
+        pageId = hashCode();
     }
 
     /** @return the table associated with this PageId */
     public int getTableId() {
-        return tableNum;
+        return hTableId;
     }
 
     /**
@@ -42,12 +42,7 @@ public class HeapPageId implements PageId {
      * @see BufferPool
      */
     public int hashCode() {
-        // table num page num [ex: tablennum = 987, pagenum=4565, hash = 9874565]
-        //double pageDigits=(java.lang.Math.log10(pageNum)+1);
-        //int hash=(int)(tableNum*java.lang.Math.pow(10.0,pageDigits)) + pageNum;
-        //return hash;
-
-        return java.util.Objects.hash(tableNum, pageNum);
+        return java.util.Objects.hash(hTableId, pageNum);
     }
 
     /**
@@ -59,7 +54,7 @@ public class HeapPageId implements PageId {
      */
     public boolean equals(Object o) {
         if(o instanceof HeapPageId && o != null){
-            if ((((HeapPageId) o).pageNum==this.pageNum) && (((HeapPageId) o).tableNum==this.tableNum)){
+            if ((((HeapPageId) o).pageNum==this.pageNum) && (((HeapPageId) o).hTableId ==this.hTableId)){
                 return true;
             }
         }
