@@ -50,7 +50,22 @@ public class Catalog {
      * @param pkeyField the name of the primary key field
      */
     public void addTable(DbFile file, String name, String pkeyField) {
+        if (name.equals(null)) {
+            throw new IllegalArgumentException("name cannot be null");
+        }
+
         Table newTable = new Table(file, name, pkeyField);
+        Iterator<Integer> ids=tableIdIterator();
+        int newId =file.getId();
+        while(ids.hasNext()){
+            int curr = ids.next();
+            if(curr==newId){
+                String oldName=getTableName(curr);
+                tables.remove(oldName);
+                tables.put(name,newTable);
+                break;
+            }
+        }
         if(tables.containsKey(name)){
             tables.replace(name,newTable);
         }

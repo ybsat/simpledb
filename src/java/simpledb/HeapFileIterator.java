@@ -18,10 +18,10 @@ public class HeapFileIterator extends AbstractDbFileIterator {
         iter=tuples.iterator();
     }
 
-    @Override
-    public boolean hasNext() throws DbException, TransactionAbortedException {
-        return iter.hasNext();
-    }
+    //@Override
+    //public boolean hasNext() throws DbException, TransactionAbortedException {
+    //    return iter.hasNext();
+    //}
 
     @Override
     public void rewind() throws DbException, TransactionAbortedException {
