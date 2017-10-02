@@ -10,6 +10,9 @@ import java.util.*;
 public class SeqScan implements OpIterator {
 
     private static final long serialVersionUID = 1L;
+    private TransactionId transid = tid;
+    private int tid; //tableId
+
 
     /**
      * Creates a sequential scan over the specified table as a part of the
