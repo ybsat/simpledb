@@ -13,7 +13,7 @@ public class HeapPageId implements PageId {
      */
 
     public int hashNum;
-    public int tableNum;
+    public int tableNum; //this is tableId
     public int pageNum;
 
     public HeapPageId(int tableId, int pgNo) {
