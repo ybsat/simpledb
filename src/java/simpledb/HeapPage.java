@@ -68,15 +68,17 @@ public class HeapPage implements Page {
         @return the number of tuples on this page
     */
     private int getNumTuples() {
-        return (int)(java.lang.Math.floor((BufferPool.getPageSize()*8) / (td.getSize()*8 +1)));
+        return (BufferPool.getPageSize()*8) / (td.getSize()*8 +1);
     }
 
     /**
      * Computes the number of bytes in the header of a page in a HeapFile with each tuple occupying tupleSize bytes
      * @return the number of bytes in the header of a page in a HeapFile with each tuple occupying tupleSize bytes
      */
-    private int getHeaderSize() {        
-        return (int)(java.lang.Math.ceil(getNumTuples()/8));
+    private int getHeaderSize() {
+        int bytesize = getNumTuples()/8;
+        if (bytesize * 8 < getNumTuples()) bytesize++;
+        return bytesize;
     }
     
     /** Return a view of this page before it was modified
@@ -277,8 +279,19 @@ public class HeapPage implements Page {
      * Returns the number of empty slots on this page.
      */
     public int getNumEmptySlots() {
-        int filledSlots = tuples.length;
-        return getNumTuples()-filledSlots;
+
+        int empty_counter = 0; //filled slot counter
+
+        // Outer loop over header bytes
+        for (int i = 0; i < header.length; i++) {
+            byte curr_byte = header[i];
+            // inner loop to shift position of inner byte to test each bit consecutively if set to 1 or 0
+            for (int j = 0; j < 8; j++) {
+                if ( ((curr_byte >> j) == ((byte) 0)) ) empty_counter++;
+            }
+        }
+
+        return empty_counter;
     }
 
     /**
@@ -286,6 +299,15 @@ public class HeapPage implements Page {
      */
     public boolean isSlotUsed(int i) {
 
+        if (i >= getNumTuples()) return false;
+
+        int byte_index = i / 8;
+
+        byte storage_byte = header[byte_index];
+
+        int temp = ((storage_byte >> (i - byte_index * 8) ) & 1);
+
+        if (temp == 1) return true;
         return false;
     }
 

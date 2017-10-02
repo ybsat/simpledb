@@ -17,9 +17,9 @@ public class HeapPageId implements PageId {
     public int pageNum;
 
     public HeapPageId(int tableId, int pgNo) {
-        hashNum=hashCode();
         pageNum = pgNo;
-        tableNum=tableId;
+        tableNum = tableId;
+        hashNum = hashCode();
     }
 
     /** @return the table associated with this PageId */
@@ -43,9 +43,11 @@ public class HeapPageId implements PageId {
      */
     public int hashCode() {
         // table num page num [ex: tablennum = 987, pagenum=4565, hash = 9874565]
-        double pageDigits=(java.lang.Math.log10(pageNum)+1);
-        int hash=(int)(tableNum*java.lang.Math.pow(10.0,pageDigits)) + pageNum;
-        return hash;
+        //double pageDigits=(java.lang.Math.log10(pageNum)+1);
+        //int hash=(int)(tableNum*java.lang.Math.pow(10.0,pageDigits)) + pageNum;
+        //return hash;
+
+        return java.util.Objects.hash(tableNum, pageNum);
     }
 
     /**

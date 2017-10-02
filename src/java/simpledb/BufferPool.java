@@ -38,7 +38,8 @@ public class BufferPool {
      */
     public BufferPool(int numPages) {
         bpool = new ConcurrentHashMap<PageId, Page>(numPages);
-        counter.getAndSet(0);
+        counter = new AtomicInteger(0);
+        //counter.getAndSet(0);
     }
     
     public static int getPageSize() {
@@ -75,14 +76,14 @@ public class BufferPool {
         // if the page is in the bufferpool, return it
         if (bpool.containsKey(pid)) {
             return bpool.get(pid);
-        } else if (counter.get() < 50) {
+        } else if (counter.get() < 50) { //if page not in buffer pool and bp not full, add it
             counter.getAndIncrement();
             int tableId = pid.getTableId();
             DbFile file = Database.getCatalog().getDatabaseFile(tableId);
             Page pg = file.readPage(pid);
             bpool.put(pid, pg);
             return pg;
-        } else {
+        } else { //if buffer pool is full, throw exception
             throw new DbException("cannot retrieve page");
         }
     }
