@@ -17,7 +17,7 @@ public class HeapFile implements DbFile {
 
     private File file;
     private TupleDesc schema;
-    private fileid;
+    private int fileid;
 
     /**
      * Constructs a heap file backed by the specified file.
