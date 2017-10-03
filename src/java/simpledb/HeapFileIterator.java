@@ -3,10 +3,7 @@ package simpledb;
 import java.io.*;
 import java.util.*;
 
-/**
- * Created by ankita on 10/2/17.
- */
-public class HeapFileIterator extends AbstractDbFileIterator {
+public class HeapFileIterator implements DbFileIterator {
 
     TransactionId tid;
     Iterator<Tuple> iter;
@@ -15,11 +12,13 @@ public class HeapFileIterator extends AbstractDbFileIterator {
     public HeapFileIterator(TransactionId tranid, ArrayList<Tuple> list) {
         tid = tranid;
         tuples=list;
-        iter=tuples.iterator();
     }
 
     @Override
     public boolean hasNext() throws DbException, TransactionAbortedException {
+        if(iter==null){
+            return false;
+        }
         return iter.hasNext();
     }
 
@@ -29,16 +28,21 @@ public class HeapFileIterator extends AbstractDbFileIterator {
     }
 
     @Override
-    protected Tuple readNext() throws DbException, TransactionAbortedException {
-        if(iter.hasNext()){
-            return iter.next();
+    public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException{
+        if(iter==null){
+            throw new NoSuchElementException();
         }
-        return null;
+        return iter.next();
     }
 
     @Override
     public void open() {
         iter=tuples.iterator();
+    }
+
+    @Override
+    public void close() {
+        iter = null;
     }
 
 }
