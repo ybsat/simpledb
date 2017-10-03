@@ -13,7 +13,7 @@ public class HeapFileIterator implements DbFileIterator {
         tid = tranid;
         tuples=list;
     }
-
+    
     @Override
     public boolean hasNext() throws DbException, TransactionAbortedException {
         if(iter==null){
