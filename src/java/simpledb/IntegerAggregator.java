@@ -1,18 +1,21 @@
 package simpledb;
 
 
+import java.util.HashMap;
+import java.util.ArrayList;
 /**
  * Knows how to compute some aggregate over a set of IntFields.
  */
 public class IntegerAggregator implements Aggregator {
 
     private static final long serialVersionUID = 1L;
-    public int gbfield; //group by field
-    public Type gbfieldtype; //group by type
+    public int gbfieldIndex; //group by field
+    public Type gbfieldType;
     public Op op; //operator
-    public int afield; // field to agg over
-    public Tuple agg; // holds agg val
-    public Tuple group; // holds group by val
+    public int afieldIndex; // field to agg over
+    public HashMap<Field, Integer> agg; // to hold agg values
+    public HashMap<Field, Integer> count; // to hold count for use in averaging
+
 
     /**
      * Aggregate constructor
@@ -30,16 +33,12 @@ public class IntegerAggregator implements Aggregator {
      */
 
     public IntegerAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
-        this.gbfield=gbfield;
-        this.gbfieldtype=gbfieldtype;
+        gbfieldIndex=gbfield;
+        gbfieldType=gbfieldtype;
         op=what;
-        this.afield=afield;
-
-        TupleDesc aggTup = new TupleDesc(int,"agg");
-        agg=new Tuple(aggTup);
-
-        TupleDesc groupTup = new TupleDesc(gbfieldtype, "group");
-        group=new Tuple(groupTup);
+        afieldIndex=afield;
+        agg= new HashMap<Field, Integer>();
+        count=new HashMap<Field, Integer>();
     }
 
     /**
@@ -50,12 +49,50 @@ public class IntegerAggregator implements Aggregator {
      *            the Tuple containing an aggregate field and a group-by field
      */
     public void mergeTupleIntoGroup(Tuple tup) {
-        // find a field
-        // assign to group by
-        // perform op on it
+        Field gbField;
+        if(gbfieldIndex==NO_GROUPING){
+            gbField=null;
+        }
+        else{
+            gbField=tup.getField(gbfieldIndex);
+        }
 
+        if(!agg.containsKey(gbField)){
+            count.put(gbField,0);
+            int initial=0;
+            switch(op){
+                case MIN:
+                    initial=Integer.MAX_VALUE;
+                    break;
+                case MAX:
+                    initial = Integer.MIN_VALUE;
+                    break;
+            }
+            agg.put(gbField,initial);
+        }
 
-        // some code goes here
+        int valToAdd = ((IntField)(tup.getField(afieldIndex))).getValue();
+        int currVal = agg.get(gbField);
+        int newVal=currVal;
+
+        switch(op) {
+            case MIN:
+                if (valToAdd < currVal) {
+                    newVal = valToAdd;
+                }
+                break;
+            case MAX:
+                if (valToAdd > currVal) {
+                    newVal = valToAdd;
+                }
+                break;
+            case AVG: case SUM:case COUNT:
+                int c = count.get(gbField); // to keep track of count for averaging/count at the end
+                newVal = currVal + valToAdd;
+                count.put(gbField, c + 1);
+                break;
+        }
+        agg.put(gbField,newVal);
     }
 
     /**
@@ -67,10 +104,45 @@ public class IntegerAggregator implements Aggregator {
      *         the constructor.
      */
     public OpIterator iterator() {
-        // some code goes here
-        // iterate through the 2 tuples
-        throw new
-        UnsupportedOperationException("please implement me for lab2");
+        ArrayList<Tuple> tuples = new ArrayList<Tuple>(); // to iterate over
+        String[] fieldNames;
+        Type[] fieldTypes;
+        if (gbfieldIndex == Aggregator.NO_GROUPING)
+        {
+            fieldNames = new String[] {"aggregateVal"};
+            fieldTypes = new Type[] {Type.INT_TYPE};
+        }
+        else
+        {
+            fieldNames = new String[] {"groupValue", "aggregateValue"};
+            fieldTypes = new Type[] {gbfieldType, Type.INT_TYPE};
+        }
+        TupleDesc td = new TupleDesc(fieldTypes, fieldNames);
+
+        // create tuple for every field to be grouped over
+        for(Field fieldName: agg.keySet()){
+            int aggVal;
+            Tuple toAdd;
+            if (op==Op.AVG){
+                aggVal=agg.get(fieldName) / count.get(fieldName);
+            }
+            else if(op==Op.COUNT){
+                aggVal=count.get(fieldName);
+            }
+            else{
+                aggVal=agg.get(fieldName);
+            }
+            toAdd = new Tuple(td);
+            if(gbfieldIndex==NO_GROUPING){
+                toAdd.setField(0, new IntField(aggVal));
+            }
+            else{
+                toAdd.setField(0, fieldName);
+                toAdd.setField(1, new IntField(aggVal));
+            }
+            tuples.add(toAdd);
+        }
+        return new TupleIterator(td, tuples);
     }
 
 }
