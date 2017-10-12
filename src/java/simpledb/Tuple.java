@@ -122,4 +122,32 @@ public class Tuple implements Serializable {
     {
         schema=td;
     }
+
+
+    /**
+     * Combines two tuples by concatenating the second to the first one
+     * @param t1 first tuple to combine
+     * @param t2 second tuple to combine
+     * @return combined tuple
+     */
+
+    public static Tuple merge(Tuple t1, Tuple t2) {
+        TupleDesc td = TupleDesc.merge(t1.getTupleDesc(), t2.getTupleDesc());
+
+        Tuple t = new Tuple(td);
+
+        int len1 = t1.getTupleDesc().numFields();
+        int len2 = t2.getTupleDesc().numFields();
+
+        int i = 0;
+        for (int j = 0; j < len1; i++, j++)
+            t.setField(i, t1.getField(j));
+
+        for (int j = 0; j < len2; i++, j++)
+            t.setField(i, t2.getField(j));
+
+        return t;
+    }
+
+
 }
