@@ -107,13 +107,11 @@ public class IntegerAggregator implements Aggregator {
         ArrayList<Tuple> tuples = new ArrayList<Tuple>(); // to iterate over
         String[] fieldNames;
         Type[] fieldTypes;
-        if (gbfieldIndex == Aggregator.NO_GROUPING)
-        {
+        if (gbfieldIndex == Aggregator.NO_GROUPING) {
             fieldNames = new String[] {"aggregateVal"};
             fieldTypes = new Type[] {Type.INT_TYPE};
         }
-        else
-        {
+        else {
             fieldNames = new String[] {"groupValue", "aggregateValue"};
             fieldTypes = new Type[] {gbfieldType, Type.INT_TYPE};
         }
