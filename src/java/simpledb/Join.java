@@ -90,10 +90,10 @@ public class Join extends Operator {
                 Tuple t = Tuple.merge(t1, t2);
                 this.tlist.add(t);
 
-            } // inner loop end
+            }
 
             child2.rewind();
-        } // outer loop end
+        }
 
         this.it = tlist.iterator();
     }
