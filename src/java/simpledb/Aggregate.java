@@ -40,13 +40,11 @@ public class Aggregate extends Operator {
         feed=child;
         this.afield=afield;
         op=aop;
-        int num=1;
         Type gbfieldtype=null;
         if(gfield!=-1) { // if there is a group by
-            num = 0;
             gbfieldtype=getTupleDesc().getFieldType(gfield);
         }
-        if(getTupleDesc().getFieldType(num)==Type.INT_TYPE){
+        if(child.getTupleDesc().getFieldType(afield)==Type.INT_TYPE){
             agg=new IntegerAggregator(gfield, gbfieldtype, afield, aop);
         }
         else {
