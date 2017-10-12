@@ -142,7 +142,7 @@ public class Aggregate extends Operator {
      * iterator.
      */
     public TupleDesc getTupleDesc() {
-	    feed.getTupleDesc();
+	    return feed.getTupleDesc();
     }
 
     public void close() {
