@@ -61,7 +61,6 @@ public class Predicate implements Serializable {
         this.fieldNum = field;
         this.operator = op;
         this.operand = operand;
-
     }
 
     /**
@@ -99,7 +98,8 @@ public class Predicate implements Serializable {
      * @return true if the comparison is true, false otherwise.
      */
     public boolean filter(Tuple t) {
-        return operand.compare(operator,t.getField(fieldNum));
+        Field f = t.getField(fieldNum);
+        return f.compare(operator,operand);
     }
 
     /**
