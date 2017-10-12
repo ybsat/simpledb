@@ -49,7 +49,7 @@ public class Aggregate extends Operator {
         if(getTupleDesc().getFieldType(num)==Type.INT_TYPE){
             agg=new IntegerAggregator(gfield, gbfieldtype, afield, aop);
         }
-        else if(getTupleDesc().getFieldType(num)==Type.STRING_TYPE){
+        else {
             agg = new StringAggregator(gfield, gbfieldtype, afield, aop);
         }
         output=null;

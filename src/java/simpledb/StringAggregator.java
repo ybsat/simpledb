@@ -26,6 +26,9 @@ public class StringAggregator implements Aggregator {
     public Op op;
 
     public StringAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
+        if(what!=Op.COUNT){
+            throw new IllegalArgumentException("op MUST BE count");
+        }
         gbfieldType=gbfieldtype;
         gbfieldIndex=gbfield;
         afieldIndex=afield;
@@ -48,13 +51,8 @@ public class StringAggregator implements Aggregator {
         if(!count.containsKey(groupBy)){
             count.put(groupBy,0); // initialize count to 0
         }
-        if(op!=Op.COUNT){
-            throw new IllegalArgumentException();
-        }
-        else{
-            int newCount=count.get(groupBy)+1;
-            count.put(groupBy,newCount);
-        }
+        int newCount=count.get(groupBy)+1;
+        count.put(groupBy,newCount);
     }
 
     /**
