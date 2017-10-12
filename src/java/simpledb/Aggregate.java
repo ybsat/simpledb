@@ -49,7 +49,7 @@ public class Aggregate extends Operator {
         if(getTupleDesc().getFieldType(num)==Type.INT_TYPE){
             agg=new IntegerAggregator(gfield, gbfieldtype, afield, aop);
         }
-        else {
+        else if(getTupleDesc().getFieldType(num)==Type.STRING_TYPE){
             agg = new StringAggregator(gfield, gbfieldtype, afield, aop);
         }
         output=null;
@@ -104,6 +104,7 @@ public class Aggregate extends Operator {
 
     public void open() throws NoSuchElementException, DbException,
 	    TransactionAbortedException {
+        super.open();
         feed.open();
         while(feed.hasNext()){
             agg.mergeTupleIntoGroup(feed.next());
@@ -146,6 +147,7 @@ public class Aggregate extends Operator {
     }
 
     public void close() {
+        super.close();
 	    feed.close();
 	    output.close();
     }
