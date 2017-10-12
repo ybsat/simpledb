@@ -1,11 +1,18 @@
 package simpledb;
 
+
 /**
  * Knows how to compute some aggregate over a set of IntFields.
  */
 public class IntegerAggregator implements Aggregator {
 
     private static final long serialVersionUID = 1L;
+    public int gbfield; //group by field
+    public Type gbfieldtype; //group by type
+    public Op op; //operator
+    public int afield; // field to agg over
+    public Tuple agg; // holds agg val
+    public Tuple group; // holds group by val
 
     /**
      * Aggregate constructor
@@ -23,7 +30,16 @@ public class IntegerAggregator implements Aggregator {
      */
 
     public IntegerAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
-        // some code goes here
+        this.gbfield=gbfield;
+        this.gbfieldtype=gbfieldtype;
+        op=what;
+        this.afield=afield;
+
+        TupleDesc aggTup = new TupleDesc(int,"agg");
+        agg=new Tuple(aggTup);
+
+        TupleDesc groupTup = new TupleDesc(gbfieldtype, "group");
+        group=new Tuple(groupTup);
     }
 
     /**
@@ -34,6 +50,11 @@ public class IntegerAggregator implements Aggregator {
      *            the Tuple containing an aggregate field and a group-by field
      */
     public void mergeTupleIntoGroup(Tuple tup) {
+        // find a field
+        // assign to group by
+        // perform op on it
+
+
         // some code goes here
     }
 
@@ -47,6 +68,7 @@ public class IntegerAggregator implements Aggregator {
      */
     public OpIterator iterator() {
         // some code goes here
+        // iterate through the 2 tuples
         throw new
         UnsupportedOperationException("please implement me for lab2");
     }

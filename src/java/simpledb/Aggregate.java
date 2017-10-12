@@ -10,6 +10,10 @@ import java.util.*;
 public class Aggregate extends Operator {
 
     private static final long serialVersionUID = 1L;
+    public OpIterator feed;
+    public int afield;
+    public int gfield;
+    public Aggregator.Op op;
 
     /**
      * Constructor.
@@ -30,7 +34,10 @@ public class Aggregate extends Operator {
      *            The aggregation operator to use
      */
     public Aggregate(OpIterator child, int afield, int gfield, Aggregator.Op aop) {
-	// some code goes here
+        this.gfield=gfield;
+        feed=child;
+        this.afield=afield;
+        op=aop;
     }
 
     /**
