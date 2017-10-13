@@ -4,6 +4,7 @@ import java.io.*;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.*;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
@@ -28,8 +29,10 @@ public class BufferPool {
     public static final int DEFAULT_PAGES = 50;
 
     // HashMap for the buffer pool as ConcurrentHashMap for thread safety and concurrency
-    public ConcurrentHashMap<PageId,Page> bpool;
+    private ConcurrentHashMap<PageId,Page> bpool;
     public AtomicInteger counter;
+    private LinkedList<PageId> clock;
+
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -39,6 +42,7 @@ public class BufferPool {
     public BufferPool(int numPages) {
         bpool = new ConcurrentHashMap<PageId, Page>(numPages);
         counter = new AtomicInteger(0);
+        clock = new LinkedList<PageId>();
     }
     
     public static int getPageSize() {
@@ -71,20 +75,23 @@ public class BufferPool {
      * @param perm the requested permissions on the page
      */
     public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
-        throws TransactionAbortedException, DbException {
+        throws TransactionAbortedException, DbException, IOException {
         // if the page is in the bufferpool, return it
         if (bpool.containsKey(pid)) {
+            clock.remove(pid);
+            clock.addLast(pid);
             return bpool.get(pid);
         } else if (counter.get() < 50) { //if page not in buffer pool and bp not full, add it
             counter.getAndIncrement();
-            int tableId = pid.getTableId();
-            DbFile file = Database.getCatalog().getDatabaseFile(tableId);
-            Page pg = file.readPage(pid);
-            bpool.put(pid, pg);
-            return pg;
-        } else { //if buffer pool is full, throw exception
-            throw new DbException("cannot retrieve page");
+        } else {
+            evictPage();
         }
+        DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
+        Page pg = file.readPage(pid);
+        bpool.put(pid, pg);
+        clock.addLast(pid);
+        System.out.println(bpool.size());
+        return pg;
     }
 
     /**
@@ -183,9 +190,11 @@ public class BufferPool {
      *     break simpledb if running in NO STEAL mode.
      */
     public synchronized void flushAllPages() throws IOException {
-        // some code goes here
-        // not necessary for lab1
-
+        for(PageId pid:this.bpool.keySet()) {
+            Page p = this.bpool.get(pid);
+            if (p.isDirty() != null)
+                this.flushPage(pid);
+        }
     }
 
     /** Remove the specific page id from the buffer pool.
@@ -197,8 +206,7 @@ public class BufferPool {
         are removed from the cache so they can be reused safely
     */
     public synchronized void discardPage(PageId pid) {
-        // some code goes here
-        // not necessary for lab1
+        bpool.remove(pid);
     }
 
     /**
@@ -206,8 +214,11 @@ public class BufferPool {
      * @param pid an ID indicating the page to flush
      */
     private synchronized  void flushPage(PageId pid) throws IOException {
-        // some code goes here
-        // not necessary for lab1
+        DbFile df = Database.getCatalog().getDatabaseFile(pid.getTableId());
+        Page to_write = this.bpool.get(pid);
+
+        df.writePage(to_write);
+        to_write.markDirty(false,null);
     }
 
     /** Write all pages of the specified transaction to disk.
@@ -221,9 +232,16 @@ public class BufferPool {
      * Discards a page from the buffer pool.
      * Flushes the page to disk to ensure dirty pages are updated on disk.
      */
-    private synchronized  void evictPage() throws DbException {
-        // some code goes here
-        // not necessary for lab1
+    private synchronized  void evictPage() throws DbException, IOException {
+        PageId to_evict = clock.getFirst();
+        clock.remove(to_evict);
+
+        Page p = bpool.remove(to_evict);
+        if (p.isDirty() != null) {
+            DbFile df = Database.getCatalog().getDatabaseFile(to_evict.getTableId());
+            df.writePage(p);
+        }
+
     }
 
 }
