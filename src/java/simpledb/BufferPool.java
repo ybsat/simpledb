@@ -39,7 +39,6 @@ public class BufferPool {
     public BufferPool(int numPages) {
         bpool = new ConcurrentHashMap<PageId, Page>(numPages);
         counter = new AtomicInteger(0);
-        //counter.getAndSet(0);
     }
     
     public static int getPageSize() {
@@ -149,8 +148,10 @@ public class BufferPool {
      */
     public void insertTuple(TransactionId tid, int tableId, Tuple t)
         throws DbException, IOException, TransactionAbortedException {
-        // some code goes here
-        // not necessary for lab1
+
+        DbFile table = Database.getCatalog().getDatabaseFile(tableId);
+        table.insertTuple(tid, t);
+
     }
 
     /**
@@ -168,8 +169,12 @@ public class BufferPool {
      */
     public  void deleteTuple(TransactionId tid, Tuple t)
         throws DbException, IOException, TransactionAbortedException {
-        // some code goes here
-        // not necessary for lab1
+
+        int tableid = t.getRecordId().getPageId().getTableId();
+
+        DbFile table = Database.getCatalog().getDatabaseFile(tableid);
+        table.deleteTuple(tid, t);
+
     }
 
     /**
