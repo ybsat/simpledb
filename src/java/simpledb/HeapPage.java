@@ -290,7 +290,7 @@ public class HeapPage implements Page {
     /**
      * finds and returns the index of the first available empty slot on the page
      */
-    public int firstEmptySlot() {
+    private int firstEmptySlot() {
         for (int i = 0; i < tuples.length; i++) {
             if (!isSlotUsed(i))
                 return i;
