@@ -20,6 +20,8 @@ public class HeapPage implements Page {
     final byte header[];
     final Tuple tuples[];
     final int numSlots;
+    private TransactionId tid;
+    private boolean dirty;
 
     byte[] oldData;
     private final Byte oldDataLock=new Byte((byte)0);
@@ -44,6 +46,8 @@ public class HeapPage implements Page {
         this.pid = id;
         this.td = Database.getCatalog().getTupleDesc(id.getTableId());
         this.numSlots = getNumTuples();
+        this.tid = null;
+        this.dirty = false;
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
 
         // allocate and read the header slots of this page
@@ -241,8 +245,19 @@ public class HeapPage implements Page {
      * @param t The tuple to delete
      */
     public void deleteTuple(Tuple t) throws DbException {
-        // some code goes here
-        // not necessary for lab1
+
+        RecordId rid = t.getRecordId();
+        PageId pid = rid.getPageId();
+        int tno = rid.getTupleNumber();
+
+        if (!pid.equals(this.pid))
+            throw new DbException("Tuple is not on page");
+
+        if (this.tuples[tno] == null)
+            throw new DbException("Tuple slot is already empty");
+
+        markSlotUsed(tno, false);
+        tuples[tno] = null;
     }
 
     /**
@@ -253,26 +268,56 @@ public class HeapPage implements Page {
      * @param t The tuple to add.
      */
     public void insertTuple(Tuple t) throws DbException {
-        // some code goes here
-        // not necessary for lab1
+
+        if (getNumEmptySlots() == 0)
+            throw new DbException("No empty slots");
+
+        TupleDesc td = t.getTupleDesc();
+
+        if (!td.equals(this.td))
+            throw new DbException("TupleDesc Mismatch");
+
+        int newslot = firstEmptySlot();
+
+        tuples[newslot] = t;
+        markSlotUsed(newslot, true);
+
+        RecordId rid = new RecordId(this.pid, newslot);
+        t.setRecordId(rid);
     }
+
+
+    /**
+     * finds and returns the index of the first available empty slot on the page
+     */
+    public int firstEmptySlot() {
+        for (int i = 0; i < tuples.length; i++) {
+            if (!isSlotUsed(i))
+                return i;
+        }
+        return -1;
+    }
+
+
 
     /**
      * Marks this page as dirty/not dirty and record that transaction
      * that did the dirtying
      */
     public void markDirty(boolean dirty, TransactionId tid) {
-        // some code goes here
-	// not necessary for lab1
+        this.dirty = dirty;
+        this.tid = tid;
     }
 
     /**
      * Returns the tid of the transaction that last dirtied this page, or null if the page is not dirty
      */
     public TransactionId isDirty() {
-        // some code goes here
-	// Not necessary for lab1
-        return null;      
+        if (dirty) {
+            return tid;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -280,18 +325,28 @@ public class HeapPage implements Page {
      */
     public int getNumEmptySlots() {
 
-        int empty_counter = 0; //filled slot counter
+        int count = this.numSlots;
 
-        // Outer loop over header bytes
-        for (int i = 0; i < header.length; i++) {
-            byte curr_byte = header[i];
-            // inner loop to shift position of inner byte to test each bit consecutively if set to 1 or 0
-            for (int j = 0; j < 8; j++) {
-                if ( ((curr_byte >> j) == ((byte) 0)) ) empty_counter++;
-            }
+        for (byte b : this.header) {
+            if ((b & 0x01) != 0)
+                count--;
+            if ((b & 0x02) != 0)
+                count--;
+            if ((b & 0x04) != 0)
+                count--;
+            if ((b & 0x08) != 0)
+                count--;
+            if ((b & 0x10) != 0)
+                count--;
+            if ((b & 0x20) != 0)
+                count--;
+            if ((b & 0x40) != 0)
+                count--;
+            if ((b & 0x80) != 0)
+                count--;
         }
 
-        return empty_counter;
+        return count;
     }
 
     /**
@@ -315,8 +370,19 @@ public class HeapPage implements Page {
      * Abstraction to fill or clear a slot on this page.
      */
     private void markSlotUsed(int i, boolean value) {
-        // some code goes here
-        // not necessary for lab1
+
+        int byte_index = i / 8;
+        int bit_index = i % 8;
+        byte mask;
+        mask = 0x1;
+        mask <<= bit_index;
+
+        if (value) {
+            header[byte_index] = (byte) (header[byte_index] | mask);
+        } else if (!value) {
+            mask = (byte) ~mask;
+            header[byte_index] = (byte) (header[byte_index] & mask);
+        }
     }
 
     /**
