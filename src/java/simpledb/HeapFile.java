@@ -163,7 +163,12 @@ public class HeapFile implements DbFile {
             TransactionAbortedException {
         RecordId rec=t.getRecordId();
         HeapPageId pageId = (HeapPageId) rec.getPageId();
-        HeapPage page = (HeapPage) Database.getBufferPool().getPage(tid, pageId,Permissions.READ_WRITE);
+        HeapPage page = null;
+        try {
+            page = (HeapPage) Database.getBufferPool().getPage(tid, pageId, Permissions.READ_WRITE);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         page.deleteTuple(t);
         page.markDirty(true, tid);
         ArrayList<Page> modified = new ArrayList<Page>();
@@ -178,7 +183,12 @@ public class HeapFile implements DbFile {
         for (int i = 0; i < pageCount; i++) {
             PageId hpid = new HeapPageId(fileid, i);
             try {
-                HeapPage curr = (HeapPage) Database.getBufferPool().getPage(tid, hpid, Permissions.READ_ONLY);
+                HeapPage curr = null;
+                try {
+                    curr = (HeapPage) Database.getBufferPool().getPage(tid, hpid, Permissions.READ_ONLY);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 Iterator<Tuple> iter = curr.iterator();
                 while (iter.hasNext()) {
                     tuples.add(iter.next());
