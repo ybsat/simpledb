@@ -7,7 +7,10 @@ package simpledb;
 public class Insert extends Operator {
 
     private static final long serialVersionUID = 1L;
-
+    public TransactionId tid;
+    public OpIterator feed;
+    public int tableId;
+    public DbFile file;
     /**
      * Constructor.
      *
@@ -23,12 +26,18 @@ public class Insert extends Operator {
      */
     public Insert(TransactionId t, OpIterator child, int tableId)
             throws DbException {
-        // some code goes here
+        TupleDesc table = Database.getCatalog().getDatabaseFile(tableId).getTupleDesc();
+        if(!child.getTupleDesc().equals(table)){
+            throw new DbException("table td must match tuple");
+        }
+        tid=t;
+        feed=child;
+        this.tableId=tableId;
+        file=Database.getCatalog().getDatabaseFile(tableId);
     }
 
     public TupleDesc getTupleDesc() {
-        // some code goes here
-        return null;
+        return feed.getTupleDesc();
     }
 
     public void open() throws DbException, TransactionAbortedException {
