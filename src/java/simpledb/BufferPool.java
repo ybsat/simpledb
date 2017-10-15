@@ -4,6 +4,7 @@ import java.io.*;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.*;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
@@ -26,10 +27,13 @@ public class BufferPool {
     other classes. BufferPool should use the numPages argument to the
     constructor instead. */
     public static final int DEFAULT_PAGES = 50;
+    private int numPages;
 
     // HashMap for the buffer pool as ConcurrentHashMap for thread safety and concurrency
-    public ConcurrentHashMap<PageId,Page> bpool;
+    private ConcurrentHashMap<PageId,Page> bpool;
     public AtomicInteger counter;
+    private LinkedList<PageId> clock;
+
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -37,9 +41,10 @@ public class BufferPool {
      * @param numPages maximum number of pages in this buffer pool.
      */
     public BufferPool(int numPages) {
-        bpool = new ConcurrentHashMap<PageId, Page>(numPages);
+        bpool = new ConcurrentHashMap<PageId, Page>();
         counter = new AtomicInteger(0);
-        //counter.getAndSet(0);
+        clock = new LinkedList<PageId>();
+        this.numPages = numPages;
     }
     
     public static int getPageSize() {
@@ -72,20 +77,23 @@ public class BufferPool {
      * @param perm the requested permissions on the page
      */
     public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
-        throws TransactionAbortedException, DbException {
+        throws TransactionAbortedException, DbException, IOException {
         // if the page is in the bufferpool, return it
         if (bpool.containsKey(pid)) {
+            clock.remove(pid);
+            clock.addLast(pid);
             return bpool.get(pid);
-        } else if (counter.get() < 50) { //if page not in buffer pool and bp not full, add it
+        } else if (counter.get() < numPages) { //if page not in buffer pool and bp not full, add it
             counter.getAndIncrement();
-            int tableId = pid.getTableId();
-            DbFile file = Database.getCatalog().getDatabaseFile(tableId);
-            Page pg = file.readPage(pid);
-            bpool.put(pid, pg);
-            return pg;
-        } else { //if buffer pool is full, throw exception
-            throw new DbException("cannot retrieve page");
+        } else {
+            System.out.println(pid.hashCode());
+            evictPage();
         }
+        DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
+        Page pg = file.readPage(pid);
+        bpool.put(pid, pg);
+        clock.addLast(pid);
+        return pg;
     }
 
     /**
@@ -149,8 +157,10 @@ public class BufferPool {
      */
     public void insertTuple(TransactionId tid, int tableId, Tuple t)
         throws DbException, IOException, TransactionAbortedException {
-        // some code goes here
-        // not necessary for lab1
+
+        DbFile table = Database.getCatalog().getDatabaseFile(tableId);
+        table.insertTuple(tid, t);
+
     }
 
     /**
@@ -168,8 +178,12 @@ public class BufferPool {
      */
     public  void deleteTuple(TransactionId tid, Tuple t)
         throws DbException, IOException, TransactionAbortedException {
-        // some code goes here
-        // not necessary for lab1
+
+        int tableid = t.getRecordId().getPageId().getTableId();
+
+        DbFile table = Database.getCatalog().getDatabaseFile(tableid);
+        table.deleteTuple(tid, t);
+
     }
 
     /**
@@ -178,9 +192,11 @@ public class BufferPool {
      *     break simpledb if running in NO STEAL mode.
      */
     public synchronized void flushAllPages() throws IOException {
-        // some code goes here
-        // not necessary for lab1
-
+        for(PageId pid:this.bpool.keySet()) {
+            Page p = this.bpool.get(pid);
+            if (p.isDirty() != null)
+                this.flushPage(pid);
+        }
     }
 
     /** Remove the specific page id from the buffer pool.
@@ -192,8 +208,7 @@ public class BufferPool {
         are removed from the cache so they can be reused safely
     */
     public synchronized void discardPage(PageId pid) {
-        // some code goes here
-        // not necessary for lab1
+        bpool.remove(pid);
     }
 
     /**
@@ -201,8 +216,11 @@ public class BufferPool {
      * @param pid an ID indicating the page to flush
      */
     private synchronized  void flushPage(PageId pid) throws IOException {
-        // some code goes here
-        // not necessary for lab1
+        DbFile df = Database.getCatalog().getDatabaseFile(pid.getTableId());
+        Page to_write = this.bpool.get(pid);
+
+        df.writePage(to_write);
+        to_write.markDirty(false,null);
     }
 
     /** Write all pages of the specified transaction to disk.
@@ -216,9 +234,17 @@ public class BufferPool {
      * Discards a page from the buffer pool.
      * Flushes the page to disk to ensure dirty pages are updated on disk.
      */
-    private synchronized  void evictPage() throws DbException {
-        // some code goes here
-        // not necessary for lab1
+    private synchronized  void evictPage() throws DbException, IOException {
+        PageId to_evict = clock.getFirst();
+        clock.remove(to_evict);
+        System.out.println(to_evict.hashCode());
+
+        Page p = bpool.remove(to_evict);
+        if (p.isDirty() != null) {
+            DbFile df = Database.getCatalog().getDatabaseFile(to_evict.getTableId());
+            df.writePage(p);
+        }
+
     }
 
 }

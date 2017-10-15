@@ -258,6 +258,7 @@ public class HeapPage implements Page {
 
         markSlotUsed(tno, false);
         tuples[tno] = null;
+        tuples[tno] = null;
     }
 
     /**
