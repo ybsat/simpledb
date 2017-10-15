@@ -27,6 +27,7 @@ public class BufferPool {
     other classes. BufferPool should use the numPages argument to the
     constructor instead. */
     public static final int DEFAULT_PAGES = 50;
+    private int numPages;
 
     // HashMap for the buffer pool as ConcurrentHashMap for thread safety and concurrency
     private ConcurrentHashMap<PageId,Page> bpool;
@@ -40,9 +41,10 @@ public class BufferPool {
      * @param numPages maximum number of pages in this buffer pool.
      */
     public BufferPool(int numPages) {
-        bpool = new ConcurrentHashMap<PageId, Page>(numPages);
+        bpool = new ConcurrentHashMap<PageId, Page>();
         counter = new AtomicInteger(0);
         clock = new LinkedList<PageId>();
+        this.numPages = numPages;
     }
     
     public static int getPageSize() {
@@ -81,16 +83,16 @@ public class BufferPool {
             clock.remove(pid);
             clock.addLast(pid);
             return bpool.get(pid);
-        } else if (counter.get() < 50) { //if page not in buffer pool and bp not full, add it
+        } else if (counter.get() < numPages) { //if page not in buffer pool and bp not full, add it
             counter.getAndIncrement();
         } else {
+            System.out.println(pid.hashCode());
             evictPage();
         }
         DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
         Page pg = file.readPage(pid);
         bpool.put(pid, pg);
         clock.addLast(pid);
-        System.out.println(bpool.size());
         return pg;
     }
 
@@ -235,6 +237,7 @@ public class BufferPool {
     private synchronized  void evictPage() throws DbException, IOException {
         PageId to_evict = clock.getFirst();
         clock.remove(to_evict);
+        System.out.println(to_evict.hashCode());
 
         Page p = bpool.remove(to_evict);
         if (p.isDirty() != null) {
