@@ -86,7 +86,7 @@ public class BufferPool {
         } else if (counter.get() < numPages) { //if page not in buffer pool and bp not full, add it
             counter.getAndIncrement();
         } else {
-            System.out.println(pid.hashCode());
+            //System.out.println(pid.hashCode());
             evictPage();
         }
         DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
@@ -159,7 +159,16 @@ public class BufferPool {
         throws DbException, IOException, TransactionAbortedException {
 
         DbFile table = Database.getCatalog().getDatabaseFile(tableId);
-        table.insertTuple(tid, t);
+        ArrayList<Page> dirtied = table.insertTuple(tid, t);
+
+        for (Page p: dirtied) {
+            PageId pid = p.getId();
+            if (!bpool.containsKey(pid) && bpool.size() == numPages) evictPage();
+            if (bpool.containsKey(pid)) clock.remove(pid);
+            clock.addLast(pid);
+            bpool.put(pid, p);
+            bpool.get(pid).markDirty(true, tid);
+        }
 
     }
 
@@ -180,9 +189,17 @@ public class BufferPool {
         throws DbException, IOException, TransactionAbortedException {
 
         int tableid = t.getRecordId().getPageId().getTableId();
-
         DbFile table = Database.getCatalog().getDatabaseFile(tableid);
-        table.deleteTuple(tid, t);
+        ArrayList<Page> dirtied = table.deleteTuple(tid, t);
+
+        for (Page p: dirtied) {
+            PageId pid = p.getId();
+            if (!bpool.containsKey(pid) && bpool.size() == numPages) evictPage();
+            if (bpool.containsKey(pid)) clock.remove(pid);
+            clock.addLast(pid);
+            bpool.put(pid, p);
+            bpool.get(pid).markDirty(true, tid);
+        }
 
     }
 

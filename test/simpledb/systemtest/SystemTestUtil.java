@@ -18,6 +18,7 @@ public class SystemTestUtil {
 
     private static final int MAX_RAND_VALUE = 1 << 16;
 
+
     /** @param columnSpecification Mapping between column index and value. */
     public static HeapFile createRandomHeapFile(
             int columns, int rows, Map<Integer, Integer> columnSpecification,

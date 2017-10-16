@@ -12,6 +12,7 @@ public class Delete extends Operator {
     public TransactionId tid;
     public OpIterator feed;
     public TupleDesc td;
+    public boolean been_called;
 
 
     /**
@@ -29,6 +30,8 @@ public class Delete extends Operator {
         Type[] type=new Type[] {Type.INT_TYPE};
         String[] names=new String[] {"Number of modified tuples"};
         TupleDesc td = new TupleDesc(type,names);
+//        System.out.print(td.toString());
+        been_called=false;
     }
 
     public TupleDesc getTupleDesc() {
@@ -59,7 +62,11 @@ public class Delete extends Operator {
      * @see BufferPool#deleteTuple
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
+        if(been_called || feed==null){
+            return null;
+        }
         int count=0;
+        been_called=true;
         while(feed.hasNext()){
             try {
                 Database.getBufferPool().deleteTuple(tid, feed.next());
@@ -70,7 +77,8 @@ public class Delete extends Operator {
         }
         Tuple tup = new Tuple(getTupleDesc());
         IntField num=new IntField(count);
-        tup.data.add(num);
+        tup.setField(0,num);
+//        tup.data.add(num);
         return tup;
     }
 

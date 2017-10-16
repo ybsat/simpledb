@@ -141,7 +141,6 @@ public class HeapFile implements DbFile {
             if(curr.getNumEmptySlots() > 0){
                 curr.insertTuple(t);
                 found=true;
-                curr.markDirty(true, tid);
                 modified.add(curr);
                 break;
             }
@@ -150,9 +149,7 @@ public class HeapFile implements DbFile {
             id=new HeapPageId(fileid, numPages());
             HeapPage toAdd = new HeapPage(id, HeapPage.createEmptyPageData());
             toAdd.insertTuple(t);
-            toAdd.markDirty(true, tid);
             writePage(toAdd);
-            Database.getBufferPool().getPage(tid, id, Permissions.READ_WRITE);
             modified.add(toAdd);
         }
         return modified;
@@ -161,6 +158,9 @@ public class HeapFile implements DbFile {
     // see DbFile.java for javadocs
     public ArrayList<Page> deleteTuple(TransactionId tid, Tuple t) throws DbException,
             TransactionAbortedException {
+        if((t.getRecordId()==null)||(getId() != t.getRecordId().getPageId().getTableId())) {
+            throw new DbException("no tuple found");
+        }
         RecordId rec=t.getRecordId();
         HeapPageId pageId = (HeapPageId) rec.getPageId();
         HeapPage page = null;
@@ -170,7 +170,6 @@ public class HeapFile implements DbFile {
             e.printStackTrace();
         }
         page.deleteTuple(t);
-        page.markDirty(true, tid);
         ArrayList<Page> modified = new ArrayList<Page>();
         modified.add(page);
         return modified;
