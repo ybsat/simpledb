@@ -29,8 +29,7 @@ public class Delete extends Operator {
         feed=child;
         Type[] type=new Type[] {Type.INT_TYPE};
         String[] names=new String[] {"Number of modified tuples"};
-        TupleDesc td = new TupleDesc(type,names);
-//        System.out.print(td.toString());
+        td = new TupleDesc(type,names);
         been_called=false;
     }
 
@@ -78,7 +77,6 @@ public class Delete extends Operator {
         Tuple tup = new Tuple(getTupleDesc());
         IntField num=new IntField(count);
         tup.setField(0,num);
-//        tup.data.add(num);
         return tup;
     }
 

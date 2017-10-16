@@ -77,7 +77,7 @@ public class Insert extends Operator {
      * @see BufferPool#insertTuple
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
-        if(been_called){
+        if(been_called || feed==null){
             return null;
         }
         been_called = true;
