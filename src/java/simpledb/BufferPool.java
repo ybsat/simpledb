@@ -254,7 +254,6 @@ public class BufferPool {
     private synchronized  void evictPage() throws DbException, IOException {
         PageId to_evict = clock.getFirst();
         clock.remove(to_evict);
-        System.out.println(to_evict.hashCode());
 
         Page p = bpool.remove(to_evict);
         if (p.isDirty() != null) {

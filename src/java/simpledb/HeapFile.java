@@ -177,28 +177,28 @@ public class HeapFile implements DbFile {
 
     // see DbFile.java for javadocs
     public DbFileIterator iterator(TransactionId tid) {
-        int pageCount = numPages();
-        ArrayList<Tuple> tuples = new ArrayList<Tuple>();
-        for (int i = 0; i < pageCount; i++) {
-            PageId hpid = new HeapPageId(fileid, i);
-            try {
-                HeapPage curr = null;
-                try {
-                    curr = (HeapPage) Database.getBufferPool().getPage(tid, hpid, Permissions.READ_ONLY);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                Iterator<Tuple> iter = curr.iterator();
-                while (iter.hasNext()) {
-                    tuples.add(iter.next());
-                }
-            } catch (TransactionAbortedException e) {
-                e.printStackTrace();
-            } catch (DbException e) {
-                e.printStackTrace();
-            }
-        }
-        return new HeapFileIterator(tid, tuples);
+//        int pageCount = numPages();
+//        ArrayList<Tuple> tuples = new ArrayList<Tuple>();
+//        for (int i = 0; i < pageCount; i++) {
+//            PageId hpid = new HeapPageId(fileid, i);
+//            try {
+//                HeapPage curr = null;
+//                try {
+//                    curr = (HeapPage) Database.getBufferPool().getPage(tid, hpid, Permissions.READ_ONLY);
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//                Iterator<Tuple> iter = curr.iterator();
+//                while (iter.hasNext()) {
+//                    tuples.add(iter.next());
+//                }
+//            } catch (TransactionAbortedException e) {
+//                e.printStackTrace();
+//            } catch (DbException e) {
+//                e.printStackTrace();
+//            }
+//        }
+        return new HeapFileIterator(tid, fileid, numPages());
     }
 }
 
