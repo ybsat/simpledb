@@ -118,16 +118,12 @@ public class SeqScan implements OpIterator {
     }
 
     public boolean hasNext() throws TransactionAbortedException, DbException {
-        tup=it.readNext();
-        if(tup==null){
-            return false;
-        }
-        return true;
+        return it.hasNext();
     }
 
     public Tuple next() throws NoSuchElementException,
             TransactionAbortedException, DbException {
-        return tup;
+        return it.next();
     }
 
     public void close() {

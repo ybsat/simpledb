@@ -3,7 +3,7 @@ package simpledb;
 import java.io.*;
 import java.util.*;
 
-public class HeapFileIterator extends AbstractDbFileIterator {
+public class HeapFileIterator implements DbFileIterator {
 
     TransactionId tid;
     Iterator<Tuple> pageIter;
@@ -27,34 +27,58 @@ public class HeapFileIterator extends AbstractDbFileIterator {
         open();
     }
 
+    @Override
+    public boolean hasNext() throws DbException, TransactionAbortedException {
 
-    public Tuple readNext() throws DbException, TransactionAbortedException, NoSuchElementException{
-        if(pageIter==null){
-            return null;
+        if (pageIter == null) {
+            return false;
         }
-        if(!isOpen){
-            throw new NoSuchElementException();
-        }
-
-        if(pageIter.hasNext()){
-            return pageIter.next();
-        }
-
-        else{
-            while(currPage<numPages){
+        if (pageIter.hasNext()) {
+            return true;
+        } else {
+            while (currPage < numPages) {
                 HeapPageId pid = new HeapPageId(fileId, currPage);
                 try {
                     HeapPage curr = (HeapPage) Database.getBufferPool().getPage(tid, pid, Permissions.READ_ONLY);
-                    pageIter=curr.iterator();
+                    pageIter = curr.iterator();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
                 currPage++;
-                if(pageIter.hasNext()){ //found tuple
+                if (pageIter.hasNext()) { //found tuple
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException {
+
+        if (pageIter == null || !isOpen) {
+            throw new NoSuchElementException();
+        }
+//        if (!isOpen) {
+//            throw new NoSuchElementException();
+//        }
+
+        if (pageIter.hasNext()) {
+            return pageIter.next();
+        } else {
+            while (currPage < numPages) {
+                HeapPageId pid = new HeapPageId(fileId, currPage);
+                try {
+                    HeapPage curr = (HeapPage) Database.getBufferPool().getPage(tid, pid, Permissions.READ_ONLY);
+                    pageIter = curr.iterator();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                currPage++;
+                if (pageIter.hasNext()) { //found tuple
                     return pageIter.next();
                 }
             }
-            //throw new NoSuchElementException();
         }
         return null;
     }
@@ -86,5 +110,3 @@ public class HeapFileIterator extends AbstractDbFileIterator {
     }
 
 }
-
-
