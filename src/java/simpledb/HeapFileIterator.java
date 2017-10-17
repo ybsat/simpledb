@@ -59,9 +59,6 @@ public class HeapFileIterator implements DbFileIterator {
         if (pageIter == null || !isOpen) {
             throw new NoSuchElementException();
         }
-//        if (!isOpen) {
-//            throw new NoSuchElementException();
-//        }
 
         if (pageIter.hasNext()) {
             return pageIter.next();

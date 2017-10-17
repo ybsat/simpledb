@@ -86,7 +86,6 @@ public class BufferPool {
         } else if (counter.get() < numPages) { //if page not in buffer pool and bp not full, add it
             counter.getAndIncrement();
         } else {
-            //System.out.println(pid.hashCode());
             evictPage();
         }
         DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
