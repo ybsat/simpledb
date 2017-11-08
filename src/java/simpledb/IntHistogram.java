@@ -20,8 +20,32 @@ public class IntHistogram {
      * @param min The minimum integer value that will ever be passed to this class for histogramming
      * @param max The maximum integer value that will ever be passed to this class for histogramming
      */
+    public int[] hist;
+    public double bucketSize;
+    public int numBuckets;
+    public int minVal;
+    public double numTuples;
+
     public IntHistogram(int buckets, int min, int max) {
-    	// some code goes here
+    	numBuckets=buckets;
+    	bucketSize=(int) Math.ceil((double) (max - min + 1)/buckets);
+        hist = new int[buckets];
+    	for(int i=0; i<numBuckets; i++){
+    	    hist[i]=0;
+        }
+    	minVal=min;
+    	numTuples=0;
+    }
+
+    public int findBucket(int v){
+        int bucket = (v-minVal)/(int)bucketSize;
+        if(bucket>=numBuckets){
+            return numBuckets;
+        }
+        if(bucket<0){
+            return -1;
+        }
+        return bucket;
     }
 
     /**
@@ -29,7 +53,83 @@ public class IntHistogram {
      * @param v Value to add to the histogram
      */
     public void addValue(int v) {
-    	// some code goes here
+    	int addBucket = (v-minVal)/(int)bucketSize;
+    	hist[addBucket]=hist[addBucket]+1;
+    	numTuples+=1;
+    }
+
+    public void deleteValue(int v) {
+        int delBucket = (v-minVal)/(int)bucketSize;
+        hist[delBucket]=hist[delBucket]-1;
+        numTuples-=1;
+    }
+
+    public double lessThan(int v){
+        int bucket=findBucket(v);
+        double h_b, b_f, selectivity=0;
+        double b_left=(bucketSize*(bucket-1))+minVal;
+        if(bucket<0){
+            b_left=-1;
+            b_f=0;
+            h_b=0;
+        }
+        else if(bucket>=numBuckets){
+            b_left=numBuckets-1;
+            b_f=0;
+            h_b=0;
+        }
+        else{
+            b_left=bucket-1;
+            h_b=((double)hist[bucket]);
+            b_f=(v-(b_left*bucketSize)+minVal)/bucketSize;
+        }
+        selectivity=(h_b*b_f)/numTuples;
+        if(b_left<0){
+            return selectivity/numTuples;
+        }
+        for(int i=0; i<bucket; i++){
+            selectivity+=hist[i];
+        }
+        return selectivity/numTuples;
+    }
+
+    public double greaterThan(int v){
+        int bucket=findBucket(v);
+        double h_b, b_f, selectivity=0;
+        double b_right=(bucketSize*bucket)+minVal;
+
+        if(bucket<0){
+            b_right=0;
+            b_f=0;
+            h_b=0;
+        }
+        else if(bucket>=numBuckets){
+            b_right=numBuckets;
+            b_f=0;
+            h_b=0;
+        }
+        else{
+            b_right=bucket+1;
+            h_b=((double)hist[bucket]);
+            b_f=((b_right*bucketSize)+minVal-v)/bucketSize;
+        }
+        selectivity=(h_b*b_f)/numTuples;
+        if(b_right>=numBuckets){
+            return selectivity/numTuples;
+        }
+        for(int i=bucket+1; i<numBuckets; i++){
+            selectivity+=hist[i];
+        }
+        return selectivity/numTuples;
+    }
+
+    public double equals(int v){
+        int bucket=findBucket(v);
+        if(bucket<0 || bucket>=numBuckets){
+            return 0.0;
+        }
+        double h_b=((double)hist[bucket]);
+        return (h_b/bucketSize)/numTuples;
     }
 
     /**
@@ -43,9 +143,23 @@ public class IntHistogram {
      * @return Predicted selectivity of this particular operator and value
      */
     public double estimateSelectivity(Predicate.Op op, int v) {
-
-    	// some code goes here
-        return -1.0;
+        switch(op){
+            case EQUALS:
+                return equals(v);
+            case LESS_THAN_OR_EQ:
+                return equals(v)+lessThan(v);
+            case LESS_THAN:
+                return lessThan(v);
+            case GREATER_THAN_OR_EQ:
+                return equals(v)+greaterThan(v);
+            case GREATER_THAN:
+                return greaterThan(v);
+            case NOT_EQUALS:
+                int bucket=findBucket(v);
+                return 1.0-((hist[bucket]/bucketSize)/numTuples);
+            default:
+                return -1.0;
+        }
     }
     
     /**
@@ -66,7 +180,6 @@ public class IntHistogram {
      * @return A string describing this histogram, for debugging purposes
      */
     public String toString() {
-        // some code goes here
-        return null;
+        return("helo");
     }
 }
