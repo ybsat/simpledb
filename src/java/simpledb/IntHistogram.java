@@ -155,8 +155,7 @@ public class IntHistogram {
             case GREATER_THAN:
                 return greaterThan(v);
             case NOT_EQUALS:
-                int bucket=findBucket(v);
-                return 1.0-((hist[bucket]/bucketSize)/numTuples);
+                return 1.0-equals(v);
             default:
                 return -1.0;
         }

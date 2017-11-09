@@ -17,6 +17,17 @@ public class TableStats {
 
     static final int IOCOSTPERPAGE = 1000;
 
+    // string = fieldname
+    private HashMap<String, Integer> maxVals;
+    private HashMap<String, Integer> minVals;
+    // string = fieldname
+    private HashMap<String, IntHistogram> intHistograms;
+    private HashMap<String, StringHistogram> stringHistograms;
+    private DbFile file;
+    private TupleDesc td;
+    private int numTuples;
+    private int iocostperpage;
+
     public static TableStats getTableStats(String tablename) {
         return statsMap.get(tablename);
     }
@@ -85,6 +96,101 @@ public class TableStats {
         // necessarily have to (for example) do everything
         // in a single scan of the table.
         // some code goes here
+        maxVals=new HashMap<String, Integer>();
+        minVals = new HashMap<String, Integer>();
+        file=Database.getCatalog().getDatabaseFile(tableid);
+        intHistograms = new HashMap<String, IntHistogram>();
+        stringHistograms = new HashMap<String, StringHistogram>();
+        td=Database.getCatalog().getTupleDesc(tableid);
+        TransactionId tid = new TransactionId();
+        DbFileIterator iter = file.iterator(tid);
+        numTuples=0;
+        iocostperpage=ioCostPerPage;
+
+        // set max&mins
+        setMaxMins(iter, td);
+
+        // initialize hists
+        for(int i=0; i<td.numFields(); i++){
+            String fieldname = td.getFieldName(i);
+            switch(td.getFieldType(i))
+            {
+                case INT_TYPE:
+                    IntHistogram intHist = new IntHistogram(NUM_HIST_BINS, minVals.get(fieldname), maxVals.get(fieldname));
+                    intHistograms.put(fieldname, intHist);
+                    break;
+                case STRING_TYPE:
+                    StringHistogram strHist = new StringHistogram(NUM_HIST_BINS);
+                    stringHistograms.put(fieldname, strHist);
+                    break;
+            }
+        }
+
+        //populate hist
+        try {
+            Tuple curr;
+            iter.open();
+                while(iter.hasNext()){
+                    curr=iter.next();
+                    for(int i=0; i<td.numFields(); i++){
+                        String fieldname = td.getFieldName(i);
+                        switch (td.getFieldType(i))
+                        {
+                            case INT_TYPE:
+                                int intVal = ((IntField) curr.getField(i)).getValue();
+                                intHistograms.get(fieldname).addValue(intVal);
+                                break;
+                            case STRING_TYPE:
+                                String strVal = ((StringField) curr.getField(i)).getValue();
+                                stringHistograms.get(fieldname).addValue(strVal);
+                                break;
+                        }
+                        }
+                    } iter.close();
+            } catch (DbException e1) {
+                e1.printStackTrace();
+            } catch (TransactionAbortedException e1) {
+                e1.printStackTrace();
+            }
+
+    }
+
+    public void setMaxMins(DbFileIterator iter, TupleDesc td){
+        try {
+            Tuple curr;
+            iter.open();
+            while(iter.hasNext()){
+                curr=iter.next();
+                numTuples++;
+                for(int i=0; i<td.numFields(); i++){
+                    String fieldname = td.getFieldName(i);
+                    if(td.getFieldType(i)== Type.INT_TYPE){
+                        int value = ((IntField) curr.getField(i)).getValue();
+                        if(!maxVals.containsKey(fieldname)){
+                            maxVals.put(fieldname,value);
+                        }
+                        else{
+                            if(value>maxVals.get(fieldname)){
+                                maxVals.put(fieldname,value);
+                            }
+                        }
+                        if(!minVals.containsKey(fieldname)){
+                            minVals.put(fieldname,value);
+                        }
+                        else{
+                            if(value<minVals.get(fieldname)){
+                                minVals.put(fieldname,value);
+                            }
+                        }
+                    }
+                }
+            }
+            iter.close();
+        } catch (DbException e) {
+            e.printStackTrace();
+        } catch (TransactionAbortedException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -100,8 +206,7 @@ public class TableStats {
      * @return The estimated cost of scanning the table.
      */
     public double estimateScanCost() {
-        // some code goes here
-        return 0;
+        return ((HeapFile)file).numPages() * iocostperpage;
     }
 
     /**
@@ -114,8 +219,7 @@ public class TableStats {
      *         selectivityFactor
      */
     public int estimateTableCardinality(double selectivityFactor) {
-        // some code goes here
-        return 0;
+        return (int) Math.ceil(numTuples*selectivityFactor);
     }
 
     /**
@@ -147,16 +251,23 @@ public class TableStats {
      *         predicate
      */
     public double estimateSelectivity(int field, Predicate.Op op, Field constant) {
-        // some code goes here
-        return 1.0;
+        if(constant.getType().equals(Type.INT_TYPE)){
+            int value = ((IntField) constant).getValue();
+            IntHistogram iHist = intHistograms.get(td.getFieldName(field));
+            return iHist.estimateSelectivity(op, value);
+        }
+        else {
+            String value = ((StringField)(constant)).getValue();
+            StringHistogram sHist = stringHistograms.get(td.getFieldName(field));
+            return sHist.estimateSelectivity(op, value);
+        }
     }
 
     /**
      * return the total number of tuples in this table
      * */
     public int totalTuples() {
-        // some code goes here
-        return 0;
+        return numTuples;
     }
 
 }
