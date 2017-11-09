@@ -107,8 +107,44 @@ public class TableStats {
         numTuples=0;
         iocostperpage=ioCostPerPage;
 
-        // set max&mins
-        setMaxMins(iter, td);
+        // set max&mins (first iteration of table)
+        try {
+            Tuple curr;
+            iter.open();
+            while(iter.hasNext()){
+                curr=iter.next();
+                // count # tuples
+                numTuples++;
+                for(int i=0; i<td.numFields(); i++){
+                    String fieldname = td.getFieldName(i);
+                    // only compute max/min for ints, NOT STRING
+                    if(td.getFieldType(i)== Type.INT_TYPE){
+                        int value = ((IntField) curr.getField(i)).getValue();
+                        if(!maxVals.containsKey(fieldname)){
+                            maxVals.put(fieldname,value);
+                        }
+                        else{
+                            if(value>maxVals.get(fieldname)){
+                                maxVals.put(fieldname,value);
+                            }
+                        }
+                        if(!minVals.containsKey(fieldname)){
+                            minVals.put(fieldname,value);
+                        }
+                        else{
+                            if(value<minVals.get(fieldname)){
+                                minVals.put(fieldname,value);
+                            }
+                        }
+                    }
+                }
+            }
+            iter.close();
+        } catch (DbException e) {
+            e.printStackTrace();
+        } catch (TransactionAbortedException e) {
+            e.printStackTrace();
+        }
 
         // initialize hists
         for(int i=0; i<td.numFields(); i++){
@@ -126,7 +162,7 @@ public class TableStats {
             }
         }
 
-        //populate hist
+        //populate hist (second iteration over table)
         try {
             Tuple curr;
             iter.open();
@@ -155,44 +191,6 @@ public class TableStats {
 
     }
 
-    public void setMaxMins(DbFileIterator iter, TupleDesc td){
-        try {
-            Tuple curr;
-            iter.open();
-            while(iter.hasNext()){
-                curr=iter.next();
-                numTuples++;
-                for(int i=0; i<td.numFields(); i++){
-                    String fieldname = td.getFieldName(i);
-                    if(td.getFieldType(i)== Type.INT_TYPE){
-                        int value = ((IntField) curr.getField(i)).getValue();
-                        if(!maxVals.containsKey(fieldname)){
-                            maxVals.put(fieldname,value);
-                        }
-                        else{
-                            if(value>maxVals.get(fieldname)){
-                                maxVals.put(fieldname,value);
-                            }
-                        }
-                        if(!minVals.containsKey(fieldname)){
-                            minVals.put(fieldname,value);
-                        }
-                        else{
-                            if(value<minVals.get(fieldname)){
-                                minVals.put(fieldname,value);
-                            }
-                        }
-                    }
-                }
-            }
-            iter.close();
-        } catch (DbException e) {
-            e.printStackTrace();
-        } catch (TransactionAbortedException e) {
-            e.printStackTrace();
-        }
-    }
-
     /**
      * Estimates the cost of sequentially scanning the file, given that the cost
      * to read a page is costPerPageIO. You can assume that there are no seeks
@@ -219,7 +217,7 @@ public class TableStats {
      *         selectivityFactor
      */
     public int estimateTableCardinality(double selectivityFactor) {
-        return (int) Math.ceil(numTuples*selectivityFactor);
+        return (int) (numTuples*selectivityFactor);
     }
 
     /**
