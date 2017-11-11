@@ -111,7 +111,7 @@ public class JoinOptimizer {
             // HINT: You may need to use the variable "j" if you implemented
             // a join algorithm that's more complicated than a basic
             // nested-loops join.
-            return -1.0;
+            return cost1 + card1*cost2 + card1*card2;
         }
     }
 
@@ -155,9 +155,19 @@ public class JoinOptimizer {
             String field2PureName, int card1, int card2, boolean t1pkey,
             boolean t2pkey, Map<String, TableStats> stats,
             Map<String, Integer> tableAliasToId) {
-        int card = 1;
-        // some code goes here
-        return card <= 0 ? 1 : card;
+        if (joinOp == Predicate.Op.EQUALS) {
+            if (t1pkey) {
+                return card2;
+            } else if (t2pkey) {
+                return card1;
+            } else if (card1 >= card2) {
+                return card1;
+            } else {
+                return card2;
+            }
+        } else {
+            return (int) (0.7*card1*card2);
+        }
     }
 
     /**
@@ -217,11 +227,33 @@ public class JoinOptimizer {
             HashMap<String, TableStats> stats,
             HashMap<String, Double> filterSelectivities, boolean explain)
             throws ParsingException {
-        //Not necessary for labs 1--3
 
-        // some code goes here
-        //Replace the following
-        return joins;
+        PlanCache cache = new PlanCache();
+        Set<LogicalJoinNode> hash = new HashSet<LogicalJoinNode>(joins);
+        Set<Set<LogicalJoinNode>> join = enumerateSubsets(joins,1);
+        // For each JoinNode, calculate cost and cardinality of subplan
+        for (int i=0;i<=join.size();++i){
+            for (Set<LogicalJoinNode> set : enumerateSubsets(joins,i)) {
+                CostCard ordered = new CostCard();
+                ordered.plan = null;
+                ordered.cost = Double.MAX_VALUE;
+                ordered.card = Integer.MAX_VALUE;
+                for (LogicalJoinNode s : set) {
+                    CostCard plan = computeCostAndCardOfSubplan(stats, filterSelectivities,s,set,ordered.cost,cache);
+                    if (plan!=null && plan.cost < ordered.cost) {
+                        ordered = plan;
+                    }
+                }
+                cache.addPlan(set,ordered.cost,ordered.card,ordered.plan);
+            }
+        }
+        Vector<LogicalJoinNode> ordered = cache.getOrder(hash);
+
+        // Display joins for IMDB test if explain flag is on
+        if (explain) {
+            printJoins(ordered,cache,stats,filterSelectivities);
+        }
+        return ordered;
     }
 
     // ===================== Private Methods =================================
