@@ -17,10 +17,8 @@ public class TableStats {
 
     static final int IOCOSTPERPAGE = 1000;
 
-    // string = fieldname
     private HashMap<String, Integer> maxVals;
     private HashMap<String, Integer> minVals;
-    // string = fieldname
     private HashMap<String, IntHistogram> intHistograms;
     private HashMap<String, StringHistogram> stringHistograms;
     private DbFile file;

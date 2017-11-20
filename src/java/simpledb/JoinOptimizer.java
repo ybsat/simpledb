@@ -249,7 +249,7 @@ public class JoinOptimizer {
         }
         Vector<LogicalJoinNode> ordered = cache.getOrder(hash);
 
-        // Display joins for IMDB test if explain flag is on
+        // Display joins if explain flag is on
         if (explain) {
             printJoins(ordered,cache,stats,filterSelectivities);
         }
