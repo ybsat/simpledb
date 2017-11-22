@@ -1,138 +1,109 @@
 package simpledb;
 
-import com.sun.org.apache.bcel.internal.generic.LCONST;
-
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.ArrayList;
-import java.util.concurrent.locks.Lock;
+import java.util.HashMap;
+//import java.util.Set;
+//import java.util.HashSet;
 
 /**
  * Created by ankita on 11/20/17.
  */
 public class LockState {
-    public class LockObj{
-        public PageId pid;
-        public Permissions perm;
-        public TransactionId tid;
-        public LockObj(PageId pid, Permissions perm, TransactionId tid){
-            this.pid=pid;
-            this.perm=perm;
-            this.tid=tid;
-        }
-    }
-    public HashMap<TransactionId, ArrayList<PageId>> transactions;
-    public HashMap<PageId, HashMap<TransactionId,LockObj>> lockTable;
-    public LinkedList<LockObj> lockQ;
+    public HashMap<PageId, ArrayList<TransactionId>> sharedLockTable;
+    public HashMap<PageId, TransactionId> xLockTable;
+    public HashMap<TransactionId, ArrayList<PageId>> sharedTransPages;
+    public HashMap<TransactionId, ArrayList<PageId>> xTransPages;
+
     public LockState(){
-        this.lockTable=new HashMap<PageId, HashMap<TransactionId, LockObj>>();
-        this.lockQ=new LinkedList<LockObj>();
+        sharedLockTable= new HashMap<PageId, ArrayList<TransactionId>>();
+        xLockTable=new HashMap<PageId, TransactionId>();
+        sharedTransPages= new HashMap<TransactionId, ArrayList<PageId>>();
+        xTransPages=new HashMap<TransactionId, ArrayList<PageId>>();
     }
 
-    public void addToTransactions(TransactionId tid, PageId pid){
-        if(transactions.get(tid)==null) {
-            ArrayList<PageId> tempArr = new ArrayList<PageId>();
-            transactions.put(tid, tempArr);
-        }
-        transactions.get(tid).add(pid);
-    }
-    public void addLock(PageId pid, Permissions perm, TransactionId tid){
-        LockObj lock = new LockObj(pid, perm, tid);
-        if(lockTable.containsKey(pid)){
-            if(lockTable.get(pid).size()==1){
-                // either exclusive or only one shared
-                for(TransactionId x: lockTable.get(pid).keySet()) {
-                    if(lockTable.get(pid).get(x).perm.equals(Permissions.READ_WRITE) || lock.perm==Permissions.READ_WRITE){
-                        lockQ.add(lock);
-                        break;
-                    }
-                    else{
-                        lockTable.get(pid).put(tid,lock);
-                        addToTransactions(tid,pid);
-                    }
+
+    public boolean addLock(PageId pid, Permissions perm, TransactionId tid){
+        if(perm==Permissions.READ_ONLY) {
+            TransactionId exc = xLockTable.get(pid);
+            ArrayList<TransactionId> tidShared = sharedLockTable.get(pid);
+            // if there is no exclusive lock or this tid has an exclusive lock, allow the lock
+            if (exc == null || exc.equals(tid)) {
+                // if no tids in list yet, create arraylist
+                if (tidShared == null) {
+                    tidShared = new ArrayList<TransactionId>();
                 }
+                tidShared.add(tid);
+                sharedLockTable.put(pid, tidShared);
+                ArrayList<PageId> sharedPages = sharedTransPages.get(tid);
+                if (sharedPages == null) {
+                    sharedPages = new ArrayList<PageId>();
+                }
+                sharedPages.add(pid);
+                sharedTransPages.put(tid, sharedPages);
+                return true;
+            }
+        }
+        else if(perm==Permissions.READ_WRITE){
+            TransactionId exc = xLockTable.get(pid);
+            ArrayList<TransactionId> shared = sharedLockTable.get(pid);
+            if((shared != null && shared.size() > 1)
+                    || (shared != null && shared.size() == 1 && !shared.contains(tid))
+                    || (exc != null && !exc.equals(tid))){
+                return false;
             }
             else {
-                // multiple locks (shared lock)
-                if(lock.perm==Permissions.READ_ONLY){
-                    lockTable.get(pid).put(tid,lock);
-                    addToTransactions(tid,pid);
+                xLockTable.put(pid,tid);
+                ArrayList<PageId> xPages = xTransPages.get(tid);
+                if(xPages==null){
+                    xPages=new ArrayList<PageId>();
                 }
-                else{
-                    lockQ.add(lock);
-                }
+                xPages.add(pid);
+                xTransPages.put(tid,xPages);
+                return true;
             }
         }
-        else {
-            HashMap<TransactionId, LockObj> tempHM = new HashMap<TransactionId, LockObj>();
-            tempHM.put(tid,lock);
-            lockTable.put(pid,tempHM);
-            addToTransactions(tid,pid);
+        return false;
+    }
+
+    public void releaseSingleLock(TransactionId tid, PageId pid){
+        // check in shared locks
+        if(sharedTransPages.get(tid)!=null){
+            sharedTransPages.get(tid).remove(pid);
+        }
+        if(sharedLockTable.get(pid)!=null){
+            sharedLockTable.get(pid).remove(tid);
+        }
+        if(xTransPages.get(tid)!=null){
+            xTransPages.get(tid).remove(pid);
+        }
+        xLockTable.remove(pid);
+    }
+
+    public boolean holdsLock(TransactionId tid, PageId pid){
+        //check shared
+        if(sharedLockTable.get(pid)!=null && sharedLockTable.get(pid).contains(tid)){
+            return true;
+        }
+        // check exclusive
+        else if(xLockTable.get(pid)!=null && xLockTable.get(pid).equals(tid)){
+            return true;
+        }
+        else{
+            return false;
         }
     }
 
-    public void removeSingleLock(TransactionId tid, PageId pid){
-        transactions.get(tid).remove(pid);
-        lockTable.get(pid).remove(tid);
-        if(transactions.get(tid).size()==0){
-            transactions.remove(tid);
+    public void releaseAllLocks(TransactionId tid){
+        ArrayList<PageId> sharedPages = sharedTransPages.get(tid);
+        for(PageId x: sharedPages){
+            sharedLockTable.get(x).remove(tid);
         }
-        if(lockTable.get(pid).size()==0){
-            lockTable.remove(pid);
+        sharedTransPages.remove(tid);
+        ArrayList<PageId> xPages = xTransPages.get(tid);
+        for(PageId x: xPages){
+            xLockTable.remove(x);
         }
+        xTransPages.remove(tid);
     }
 
-    public void removeAllLocks(TransactionId tid){
-        if(transactions.get(tid)==null){
-            return;
-        }
-        ArrayList<PageId> pagesToRemove = transactions.get(tid);
-        transactions.remove(tid);
-        for(PageId pid: pagesToRemove){
-            lockTable.get(pid).remove(tid);
-            if(lockTable.get(pid).size()==0){
-                lockTable.remove(pid);
-            }
-        }
-    }
-
-    public void updateQueue(){
-        boolean feasible=true;
-        while(feasible){
-            if(lockQ.isEmpty()){
-                feasible=false;
-                break;
-            }
-            LockObj curr = lockQ.element();
-
-            // if nothing has lock on page
-            if(!lockTable.containsKey(curr.pid)){
-                HashMap<TransactionId, LockObj> tempHM = new HashMap<TransactionId, LockObj>();
-                tempHM.put(curr.tid,curr);
-                lockTable.put(curr.pid,tempHM);
-                addToTransactions(curr.tid,curr.pid);
-                lockQ.remove();
-            }
-
-            // if it is read_only
-            else if(curr.perm==Permissions.READ_ONLY){
-                if(lockTable.get(curr.pid).size()==1){
-                    for(TransactionId x: lockTable.get(curr.pid).keySet()) {
-                        // if exclusive
-                        if(lockTable.get(curr.pid).get(x).perm.equals(Permissions.READ_WRITE)){
-                            feasible=false;
-                            break;
-                        }
-                    }
-                }
-                // not 1 obj, all shared already
-                lockTable.get(curr.pid).put(curr.tid,curr);
-                lockQ.remove();
-                addToTransactions(curr.tid, curr.pid);
-            }
-            else{ //for read write where pid locktable is not empty
-                feasible=false;
-            }
-        }
-    }
 }

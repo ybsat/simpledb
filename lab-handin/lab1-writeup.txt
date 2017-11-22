@@ -1,0 +1,41 @@
+SimpleDB Lab 1
+Yahia El Bsat & Ankita Chowdhry
+
+Design Decisions:
+TupleDesc.java:
+	-ArrayList for TDItem fields
+	-Boolean member to determine if all field names are null or not
+Tuple.java:
+	-Arraylist for Field data
+	-RecordId data member
+Catalog.java:
+	-ConcurrentHashMap for table Catalog for efficient access. TableName as key. Concurrent for thread safety and allow concurrent access to tables
+Bufferpool.java:
+	-ConcurrentHashMap for pages, with pageid as key. Same reason as for Catalog
+	-AtomicInteger counter to limit the number of pages in buffer pool to 50. Has to be atomic in case there are concurrent users calling in on the same buffer pool
+HeapPageId.java:
+	-Int tableid
+-Int page number 
+-Int pageid hashed from tableid and page number
+RecordId.java:
+	-Pageid and TupleNum as data members
+HeapFile.java:
+	-File
+	-TupleDesc for schema
+	-Int fileid which also corresponds to the tableid
+HeapFileIterator.java:
+	New class, see next section
+SeqScan.java:
+	-Transaction ID
+	-Table ID as int
+	-Table alias name
+	-DbFileIterator for easy scan
+
+
+Changes to API: 
+	In order to write the iterator in the HeapFile file, we needed to add a heapFileIterator class which was inherited from the DbFileIterator interface (since the function header in heapFile’s iterator specified DbFileIterator as the return type). In order to do this, we created a constructor that created a HeapFileIterator using a tid (given in HeapFile’s function) and a list of Tuples (generated in HeapFile’s function). We then used this HeapFileIterator to implement the functions desired in the DbFileIterator class.
+
+
+Time spent on Lab and comments:
+	We spent around 10 hours working on this lab. A lot of the time was spent trying to understand the overall system and architecture of simpleDB, since that was the backbone of how to implement the project. We had to decipher how the files interacted with each others and what the different design decisions implied.
+	We found it difficult to sift through the API and figure out how each object was related to each other. This included PageIds, Tuples, TableIds, FileIds, and RecordIds. All of these different Ids had their own place of initialization and hashing (if necessary). Once we were finally able to write out a hierarchy for how the simpleDB worked, it was simpler to decide where to implement what.

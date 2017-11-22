@@ -1,0 +1,44 @@
+Buildfile: /Users/jennie/courses/eecs339/eecs339/simple-db-solutions/eecs339-lab1/build.xml
+
+compile:
+
+testcompile:
+
+systemtest:
+    [junit] Running simpledb.systemtest.ScanTest
+    [junit] Testsuite: simpledb.systemtest.ScanTest
+    [junit] Tests run: 3, Failures: 0, Errors: 3, Skipped: 0, Time elapsed: 0.108 sec
+    [junit] Tests run: 3, Failures: 0, Errors: 3, Skipped: 0, Time elapsed: 0.108 sec
+    [junit] 
+    [junit] Testcase: testCache took 0.087 sec
+    [junit] 	Caused an ERROR
+    [junit] implement this
+    [junit] java.lang.UnsupportedOperationException: implement this
+    [junit] 	at simpledb.HeapFile.getId(HeapFile.java:50)
+    [junit] 	at simpledb.systemtest.SystemTestUtil.matchTuples(SystemTestUtil.java:106)
+    [junit] 	at simpledb.systemtest.SystemTestUtil.matchTuples(SystemTestUtil.java:100)
+    [junit] 	at simpledb.systemtest.ScanTest.testCache(ScanTest.java:98)
+    [junit] 
+    [junit] Testcase: testSmall took 0.001 sec
+    [junit] 	Caused an ERROR
+    [junit] implement this
+    [junit] java.lang.UnsupportedOperationException: implement this
+    [junit] 	at simpledb.HeapFile.getId(HeapFile.java:50)
+    [junit] 	at simpledb.systemtest.SystemTestUtil.matchTuples(SystemTestUtil.java:106)
+    [junit] 	at simpledb.systemtest.SystemTestUtil.matchTuples(SystemTestUtil.java:100)
+    [junit] 	at simpledb.systemtest.ScanTest.validateScan(ScanTest.java:32)
+    [junit] 	at simpledb.systemtest.ScanTest.testSmall(ScanTest.java:43)
+    [junit] 
+    [junit] Testcase: testRewind took 0.004 sec
+    [junit] 	Caused an ERROR
+    [junit] implement this
+    [junit] java.lang.UnsupportedOperationException: implement this
+    [junit] 	at simpledb.HeapFile.getId(HeapFile.java:50)
+    [junit] 	at simpledb.systemtest.ScanTest.testRewind(ScanTest.java:52)
+    [junit] 
+
+BUILD FAILED
+/Users/jennie/courses/eecs339/eecs339/simple-db-solutions/eecs339-lab1/build.xml:226: The following error occurred while executing this line:
+/Users/jennie/courses/eecs339/eecs339/simple-db-solutions/eecs339-lab1/build.xml:62: Test simpledb.systemtest.ScanTest failed
+
+Total time: 0 seconds
