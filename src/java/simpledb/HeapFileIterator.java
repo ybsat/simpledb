@@ -38,12 +38,8 @@ public class HeapFileIterator implements DbFileIterator {
         } else {
             while (currPage < numPages) {
                 HeapPageId pid = new HeapPageId(fileId, currPage);
-                try {
-                    HeapPage curr = (HeapPage) Database.getBufferPool().getPage(tid, pid, Permissions.READ_ONLY);
-                    pageIter = curr.iterator();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                HeapPage curr = (HeapPage) Database.getBufferPool().getPage(tid, pid, Permissions.READ_ONLY);
+                pageIter = curr.iterator();
                 currPage++;
                 if (pageIter.hasNext()) { //found tuple
                     return true;
@@ -65,12 +61,8 @@ public class HeapFileIterator implements DbFileIterator {
         } else {
             while (currPage < numPages) {
                 HeapPageId pid = new HeapPageId(fileId, currPage);
-                try {
-                    HeapPage curr = (HeapPage) Database.getBufferPool().getPage(tid, pid, Permissions.READ_ONLY);
-                    pageIter = curr.iterator();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                HeapPage curr = (HeapPage) Database.getBufferPool().getPage(tid, pid, Permissions.READ_ONLY);
+                pageIter = curr.iterator();
                 currPage++;
                 if (pageIter.hasNext()) { //found tuple
                     return pageIter.next();
@@ -81,21 +73,13 @@ public class HeapFileIterator implements DbFileIterator {
     }
 
     @Override
-    public void open() {
+    public void open() throws DbException, TransactionAbortedException {
         isOpen=true;
         currPage=0;
         pageIter=null;
         HeapPageId pid = new HeapPageId(fileId, currPage);
-        try {
-            HeapPage curr = (HeapPage) Database.getBufferPool().getPage(tid, pid, Permissions.READ_ONLY);
-            pageIter=curr.iterator();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (TransactionAbortedException e) {
-            e.printStackTrace();
-        } catch (DbException e) {
-            e.printStackTrace();
-        }
+        HeapPage curr = (HeapPage) Database.getBufferPool().getPage(tid, pid, Permissions.READ_ONLY);
+        pageIter=curr.iterator();
         currPage++;
     }
 

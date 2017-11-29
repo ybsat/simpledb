@@ -243,7 +243,8 @@ public class TransactionTest extends SimpleDbTestBase {
         try {
             EvictionTest.findMagicTuple(f, t);
             fail("Expected scan to run out of available buffer pages");
-        } catch (DbException e) {}
+        } catch (DbException e) {
+        }
         t.commit();
     }
 
